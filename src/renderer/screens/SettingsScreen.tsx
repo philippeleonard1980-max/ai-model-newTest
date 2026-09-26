@@ -412,7 +412,7 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
           </ol>
         )}
 
-        {capability && !capability.hasAdc && !capability.hasGcloud && !running && (
+        {capability && !capability.hasAdc && !capability.hasGcloud && !running && !ready && (
           <div className="callout">
             <p>
               Google will not let an app sign you in without a registered OAuth client, so one of
@@ -522,6 +522,11 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
                   }
                   await window.kitsune.auth.signIn();
                   await onAuthChanged();
+                  // Sign-in only produces a token. Finding the project, turning
+                  // the API on and proving it answers are the same three steps
+                  // the CLI route runs, and they need nothing but that token —
+                  // so run them here too rather than leaving setup half done.
+                  await setUp();
                 } catch (error) {
                   onError((error as Error).message);
                 } finally {
@@ -530,7 +535,7 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
               }}
             >
               {busy === 'import'
-                ? 'Waiting for your browser…'
+                ? 'Signing in and finishing setup…'
                 : '4. Open the credentials file I downloaded'}
             </button>
           </div>

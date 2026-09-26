@@ -360,3 +360,14 @@ function toState(creds: StoredCredentials): AuthState {
 export function getAuthState(): AuthState {
   return toState(readCredentials());
 }
+
+/**
+ * True when this app already holds a token of its own — from a sign-in through
+ * an OAuth client the user supplied, rather than through gcloud. Automatic
+ * setup uses it to skip straight past the sign-in step, since the rest of the
+ * work (project, API, verify) needs nothing but a bearer token.
+ */
+export function hasOwnCredentials(): boolean {
+  const creds = readCredentials();
+  return Boolean(creds.refreshToken ?? creds.accessToken);
+}

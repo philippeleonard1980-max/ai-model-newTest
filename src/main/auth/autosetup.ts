@@ -1,6 +1,6 @@
 import { readAdc } from './adc.js';
 import { GCLOUD_INSTALL_URL, gcloudInstalled, loginApplicationDefault } from './gcloud.js';
-import { getAccessToken } from './google-oauth.js';
+import { getAccessToken, hasOwnCredentials } from './google-oauth.js';
 import { loadSettings, saveSettings } from '../store/settings.js';
 import type { SetupStep } from '@shared/types';
 
@@ -13,6 +13,12 @@ import type { SetupStep } from '@shared/types';
  * for them: gcloud performs the sign-in against Google's own OAuth client, and
  * the project lookup and API enablement are just REST calls made with the
  * token that sign-in produces.
+ *
+ * Only the first step cares where the token came from. Someone who supplied
+ * their own OAuth client has already signed in by the time they get here, so
+ * that step is skipped and the remaining three run exactly as they do for the
+ * gcloud route — which is what stops the no-install route stopping half done,
+ * with a token but no enabled API.
  */
 
 const RESOURCE_MANAGER = 'https://cloudresourcemanager.googleapis.com/v1/projects';
@@ -76,14 +82,17 @@ export async function runAutoSetup(report: Report): Promise<void> {
   /* 1 ── credentials ────────────────────────────────────────────────── */
   report({ id: 'credentials', label: 'Signing in to Google', state: 'running' });
 
-  if (!readAdc()) {
+  // A sign-in through the user's own OAuth client leaves a refresh token here.
+  // That is as good a credential as anything gcloud writes, so the CLI is only
+  // needed when there is nothing at all to go on.
+  if (!readAdc() && !hasOwnCredentials()) {
     if (!gcloudInstalled()) {
       report({
         id: 'credentials',
         state: 'failed',
         label: 'Signing in to Google',
         detail:
-          'Automatic setup needs the Google Cloud CLI, which is a single installer and the only thing you have to install by hand.',
+          'There is nothing to sign in with yet. Either install the Google Cloud CLI and press this again, or expand “Set it up by hand instead” and give the app the credentials file from your own OAuth client — that route installs nothing.',
         helpUrl: GCLOUD_INSTALL_URL,
       });
       throw new Error('The Google Cloud CLI is not installed.');
