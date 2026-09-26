@@ -6,6 +6,7 @@ import { VrmStage } from '../vrm/VrmStage';
 import { PushToTalkRecorder } from '../voice/recorder';
 import type { Speaker } from '../voice/speech';
 import { MarkdownBlock } from '../components/MarkdownBlock';
+import { supportsVoiceInput } from '../../core/chat';
 
 interface Props {
   settings: AppSettings;
@@ -181,6 +182,7 @@ export function CompanionScreen({
 
   const startRecording = useCallback(async () => {
     if (talkState !== 'idle') return;
+    if (!supportsVoiceInput(settings.gemini.backend)) return;
     speaker.cancel();
     const recorder = new PushToTalkRecorder(setMicLevel);
     recorderRef.current = recorder;
@@ -193,7 +195,7 @@ export function CompanionScreen({
         `Could not open the microphone: ${(error as Error).message}. Check Windows privacy settings for microphone access.`,
       );
     }
-  }, [onError, speaker, talkState]);
+  }, [onError, settings.gemini.backend, speaker, talkState]);
 
   const stopRecording = useCallback(async () => {
     const recorder = recorderRef.current;
@@ -228,6 +230,7 @@ export function CompanionScreen({
 
     const down = (event: KeyboardEvent): void => {
       if (event.code !== 'Space' || event.repeat || isTyping(event.target)) return;
+      if (!supportsVoiceInput(settings.gemini.backend)) return;
       event.preventDefault();
       void startRecording();
     };
@@ -242,9 +245,12 @@ export function CompanionScreen({
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [startRecording, stopRecording]);
+  }, [settings.gemini.backend, startRecording, stopRecording]);
 
   const busy = talkState === 'thinking' || talkState === 'transcribing';
+  // A local model has no audio input, so offer the button honestly rather than
+  // letting the press fail with a transcription error.
+  const canTalk = supportsVoiceInput(settings.gemini.backend);
 
   return (
     <div className="companion">
@@ -335,7 +341,12 @@ export function CompanionScreen({
             <button
               type="button"
               className={talkState === 'recording' ? 'talk recording' : 'talk'}
-              disabled={busy}
+              disabled={busy || !canTalk}
+              title={
+                canTalk
+                  ? 'Hold to speak'
+                  : 'Speech needs Gemini — a local model cannot hear audio. Switch the backend in Settings.'
+              }
               onPointerDown={() => void startRecording()}
               onPointerUp={() => void stopRecording()}
               onPointerLeave={() => {
@@ -347,7 +358,11 @@ export function CompanionScreen({
                 style={{ transform: `scaleX(${talkState === 'recording' ? micLevel : 0})` }}
               />
               <span className="talk-label">
-                {talkState === 'recording' ? 'Release to send' : 'Hold to talk'}
+                {!canTalk
+                  ? 'Hold to talk (needs Gemini)'
+                  : talkState === 'recording'
+                    ? 'Release to send'
+                    : 'Hold to talk'}
               </span>
             </button>
             {speaking ? (

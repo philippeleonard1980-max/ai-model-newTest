@@ -3,8 +3,11 @@
  * renderer. Keep this file free of runtime imports from either side.
  */
 
-/** Which Google backend serves `generateContent`. Both use the same OAuth token. */
-export type GeminiBackend = 'generativelanguage' | 'vertex';
+/**
+ * Where replies come from. The two Google backends share one OAuth token;
+ * `ollama` runs a model on this machine instead, with no account and no cost.
+ */
+export type GeminiBackend = 'generativelanguage' | 'vertex' | 'ollama';
 
 /** Which credential the app is currently using. */
 export type AuthMethod = 'adc' | 'oauth-client';
@@ -52,6 +55,10 @@ export interface GeminiSettings {
   location?: string;
   temperature: number;
   maxOutputTokens: number;
+  /** Ollama only: where the local server is listening. */
+  ollamaHost?: string;
+  /** Ollama only: which pulled model to talk to. */
+  ollamaModel?: string;
 }
 
 export interface VoiceSettings {

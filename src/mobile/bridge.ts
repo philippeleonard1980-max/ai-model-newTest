@@ -1,11 +1,6 @@
 import { Browser } from '@capacitor/browser';
-import {
-  chat as coreChat,
-  listModels as coreListModels,
-  transcribe as coreTranscribe,
-  type ChatContext,
-  type GeminiContext,
-} from '../core/gemini';
+import { chat as coreChat, listModels as coreListModels } from '../core/chat';
+import { transcribe as coreTranscribe, type ChatContext, type GeminiContext } from '../core/gemini';
 import { getAccessToken, getAuthState, getClientConfig, setClientConfig, signIn, signOut } from './google-auth';
 import { assetStatus, catalogEntries, installModel } from './assets';
 import {

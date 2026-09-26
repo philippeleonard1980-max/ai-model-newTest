@@ -9,6 +9,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     location: 'global',
     temperature: 0.9,
     maxOutputTokens: 2048,
+    ollamaHost: 'http://127.0.0.1:11434',
+    ollamaModel: 'llama3.2',
   },
   voice: {
     speak: true,

@@ -76,43 +76,43 @@ That path wants an OAuth client of type **Desktop app**, and a brand-new project
 also needs its **consent screen** configured first — that step is the one that
 usually trips people up, and the panel links straight to it.
 
-### Which backend?
+### Which backend, and what it costs
 
-| | Gemini API (default) | Vertex AI |
+| | Cost | Setup |
 |---|---|---|
-| Billing | Not required — free tier | Requires a billed Cloud project |
-| Setup | Enable one API | Enable API, set project + location |
-| Auth | Your Google account | Your Google account |
+| **Gemini API** (default) | **Free.** No card, no billing account. | Press *Set up automatically* |
+| **Local model (Ollama)** | **Free.** Runs on your machine, offline. | Install Ollama, pull a model |
+| Vertex AI | **Paid** — needs a billed Cloud project | Project ID + location |
 
-Both are OAuth-only in this app. Neither uses an API key.
+On the default Gemini API backend nothing can charge you. The free tier gives
+you Flash models with no payment method attached, and when you hit the rate
+limit **requests fail rather than being billed** — there is no card to charge.
+Creating a Google Cloud project is also free; a project is just a container, and
+the automatic setup only switches the Gemini API on inside it.
 
-> **A note on what changed.** Google shut down the Gemini CLI "Login with
-> Google" path for individual accounts on 18 June 2026, so that specific route
-> no longer works. The two backends above are the supported ways to reach Gemini
-> with a Google account and no API key, which is why the app uses them. Some
-> third-party plugins re-use Antigravity's OAuth client to get free quota; this
-> app deliberately does not, because it breaks Antigravity's terms and has been
-> getting accounts blocked.
+Two honest caveats. Free-tier traffic may be used by Google to improve their
+products, and Pro models moved behind billing in May 2026, so the free tier is
+Flash-only. If either matters to you, use the local backend.
 
----
+### Running fully offline and free
 
-## Android
-
-There is an Android build of the same app — same React tree, same 3D stage, same
-persona and memory format, in a Capacitor shell instead of Electron. Sign-in
-necessarily differs (Google closed the desktop-style redirect to Android apps),
-so it uses Play Services' Authorization API: still your Google account, still no
-API key.
+Pick **Local model (Ollama)** in *Google & Gemini* and Rin answers from a model
+on your own machine. No account, no network, no quota, nothing to bill.
 
 ```sh
-npm run sync:android     # build the web bundle and copy it into android/
-npm run open:android     # open in Android Studio, then Run
+# install Ollama from https://ollama.com, then:
+ollama pull llama3.2
 ```
 
-**[docs/ANDROID.md](docs/ANDROID.md)** has the full setup, including the one
-required step — registering an Android OAuth client with your signing
-certificate's SHA-1 — and an honest account of what could not be verified (no
-APK was built here; the Android SDK host is blocked in this environment).
+Set the model name in Settings and press *Refresh list* to see what you have
+pulled. Her personality, her memory file, the memory tools and the mood-driven
+animation all work exactly the same — the provider is the only thing that
+changes.
+
+The one thing it cannot do is **hold-to-talk**. A local text model has no audio
+input, so speech recognition still needs Gemini; the button is disabled and says
+so rather than failing. Her *voice* is unaffected either way: replies are spoken
+by the Windows system voice, which is local and free regardless of backend.
 
 ## Install and run
 

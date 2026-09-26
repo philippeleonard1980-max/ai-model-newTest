@@ -1,10 +1,9 @@
 import { getAccessToken } from '../auth/google-oauth.js';
 import { loadSettings } from '../store/settings.js';
 import { readMemory, readPersona, writeMemory } from '../store/documents.js';
+import { chat as coreChat, listModels as coreListModels } from '../../core/chat.js';
 import {
-  chat as coreChat,
   endpointFor,
-  listModels as coreListModels,
   transcribe as coreTranscribe,
   type ChatContext,
   type GeminiContext,

@@ -348,10 +348,23 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
   };
 
   const ready = auth?.signedIn === true;
+  const local = settings.gemini.backend === 'ollama';
 
   return (
     <section className="panel scroll">
-      <h2>Google account</h2>
+      {local ? (
+        <>
+          <h2>Running locally</h2>
+          <p className="lead">
+            Rin is answering from a model on this machine through Ollama. Nothing is sent anywhere,
+            there is no account and it cannot cost anything. Sign-in below stays optional — it is
+            only needed for hold-to-talk, because a local model has no audio input.
+          </p>
+        </>
+      ) : (
+        <h2>Google account</h2>
+      )}
+      {!local && (<>
       <p className="lead">
         Rin talks to Gemini through your own Google account. No API key, and nothing to copy or
         paste — press the button and the app does the rest.
@@ -434,9 +447,13 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
         )}
       </div>
 
+      </>)}
+
+      {!local && (
       <button type="button" className="linkish disclosure" onClick={() => setShowManual(!showManual)}>
         {showManual ? 'Hide' : 'Set it up by hand instead'}
       </button>
+      )}
 
       {showManual && (
         <div className="manual-setup">
@@ -526,8 +543,9 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
             value={settings.gemini.backend}
             onChange={(event) => void patch({ backend: event.target.value as GeminiBackend })}
           >
-            <option value="generativelanguage">Gemini API (recommended)</option>
-            <option value="vertex">Vertex AI (needs a billed Cloud project)</option>
+            <option value="generativelanguage">Gemini API — free tier, no card</option>
+            <option value="ollama">Local model (Ollama) — free and offline</option>
+            <option value="vertex">Vertex AI — needs a billed Cloud project</option>
           </select>
         </div>
         <div className="field">
@@ -535,10 +553,13 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
           <div className="row tight">
             <input
               id="model"
-              value={settings.gemini.model}
+              value={local ? (settings.gemini.ollamaModel ?? '') : settings.gemini.model}
               spellCheck={false}
               list="model-options"
-              onChange={(event) => void patch({ model: event.target.value })}
+              placeholder={local ? 'llama3.2' : 'gemini-flash-latest'}
+              onChange={(event) =>
+                void patch(local ? { ollamaModel: event.target.value } : { model: event.target.value })
+              }
             />
             <datalist id="model-options">
               {models.map((model) => (
@@ -566,18 +587,32 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
             </button>
           </div>
         </div>
-        <div className="field">
-          <label htmlFor="project">
-            Cloud project {settings.gemini.backend === 'vertex' ? '(required)' : '(filled in by setup)'}
-          </label>
-          <input
-            id="project"
-            value={settings.gemini.projectId ?? ''}
-            spellCheck={false}
-            placeholder={settings.gemini.backend === 'vertex' ? 'my-project-id' : 'set automatically'}
-            onChange={(event) => void patch({ projectId: event.target.value })}
-          />
-        </div>
+        {local ? (
+          <div className="field">
+            <label htmlFor="ollama-host">Ollama address</label>
+            <input
+              id="ollama-host"
+              value={settings.gemini.ollamaHost ?? ''}
+              spellCheck={false}
+              placeholder="http://127.0.0.1:11434"
+              onChange={(event) => void patch({ ollamaHost: event.target.value })}
+            />
+          </div>
+        ) : (
+          <div className="field">
+            <label htmlFor="project">
+              Cloud project{' '}
+              {settings.gemini.backend === 'vertex' ? '(required)' : '(filled in by setup)'}
+            </label>
+            <input
+              id="project"
+              value={settings.gemini.projectId ?? ''}
+              spellCheck={false}
+              placeholder={settings.gemini.backend === 'vertex' ? 'my-project-id' : 'set automatically'}
+              onChange={(event) => void patch({ projectId: event.target.value })}
+            />
+          </div>
+        )}
         {settings.gemini.backend === 'vertex' && (
           <div className="field">
             <label htmlFor="location">Location</label>
@@ -601,6 +636,7 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
             onChange={(event) => void patch({ temperature: Number(event.target.value) })}
           />
         </div>
+        {!local && (
         <div className="field">
           <label htmlFor="max-tokens">Max output tokens</label>
           <input
@@ -613,7 +649,16 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
             onChange={(event) => void patch({ maxOutputTokens: Number(event.target.value) })}
           />
         </div>
+        )}
       </div>
+
+      {local && (
+        <p className="muted small">
+          Install <strong>Ollama</strong>, then pull a model — <code>ollama pull llama3.2</code> —
+          and press <em>Refresh list</em> to see what you have. Hold-to-talk is greyed out on this
+          backend; a local model cannot hear audio, so speech still needs Gemini.
+        </p>
+      )}
     </section>
   );
 }
