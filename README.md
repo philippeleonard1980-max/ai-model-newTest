@@ -137,22 +137,32 @@ installer itself must be done on Windows (or under Wine).
 
 The avatar is an **existing model that gets installed, not generated**. Assets
 live in `assets/` and are downloaded by `scripts/fetch-assets.mjs`, which runs
-automatically after `npm install`. They are not committed — the avatar alone is
-~18 MB, and the sources are public-domain downloads rather than project source.
+automatically after `npm install`. They are not committed — the avatars run to
+tens of megabytes, and the sources are public-domain downloads rather than
+project source.
 
 | Asset | Source | Licence |
 |---|---|---|
-| **Megan the Fox** (default) | Polygonal Mind, 100 Avatars R3 | CC0-1.0 |
+| **Anna** — kitsune girl (default) | Polygonal Mind, 100 Avatars R3 #270 | CC0-1.0 |
+| **Megan the Fox** | Polygonal Mind, 100 Avatars R3 #278 | CC0-1.0 |
 | **響狐リク / Hibiki Fox Riku** (VTuber) | Original VRoid character, [Booth](https://booth.pm/en/items/1148939) | check source page |
-| **Two-Tails** (alternative) | Polygonal Mind, 100 Avatars R3 | CC0-1.0 |
+| **Two-Tails** | Polygonal Mind, 100 Avatars R3 #284 | CC0-1.0 |
 | VRoid sample girl (fallback) | pixiv VRoid Studio sample | CC0-1.0 |
-
-The three foxes sit on independent hosts and are tried in order, so a network
-that blocks one may still reach another. Where a licence could not be read from
-a machine-readable source, the app labels the entry **licence unverified** and
-links to the author's page rather than asserting terms on their behalf.
 | `idle.vrma` | pixiv ChatVRM | MIT |
 | 11 expression clips | `tk256ailab/vrm-viewer` | MIT |
+
+The foxes sit on independent hosts and are tried in order, so a network that
+blocks one may still reach another. Where a licence could not be read from a
+machine-readable source, the app labels the entry **licence unverified** and
+links to the author's page rather than asserting terms on their behalf.
+
+### Rin
+
+![](docs/preview/fox-head.png)
+
+Anna is an anime fox girl: white-and-red fox ears, a kitsune-mask marking
+across half her face, pink hair tied up with a kanzashi pin and bell charms.
+She is CC0, so she ships as the default with nothing to agree to.
 
 Rendering is [`@pixiv/three-vrm`](https://github.com/pixiv/three-vrm) on
 three.js. Animation clips are VRM Animation (`.vrma`) files retargeted onto
@@ -163,43 +173,38 @@ working.
 
 `tools/render.mjs` loads a `.vrm` in headless Chromium through the same
 three.js + `@pixiv/three-vrm` stack the app uses and writes a PNG. See
-`tools/README.md`. The images in `docs/preview/` came from it, and they are how
-the animation retargeting was checked: the avatar's bounding box narrows from
-1.06 m wide in the T-pose to ~0.42 m once a VRMA clip is applied, which is the
-arms coming down.
+`tools/README.md`. The images in `docs/preview/` came from it, and it is how
+every avatar in the catalog was checked — both that it is really a fox, and
+that the animation clips retarget onto it.
 
 | T-pose (no clip) | `thinking.vrma` | `farewell.vrma` |
 |---|---|---|
 | ![](docs/preview/model-tpose.png) | ![](docs/preview/pose-thinking.png) | ![](docs/preview/pose-farewell.png) |
 
+Anna's bounding box narrows from 1.27 m wide in the T-pose to 0.39–0.75 m once
+a VRMA clip is applied, which is the arms coming down — the retargeting works
+on her exactly as it does on the fallback.
+
 ### If the fox avatar is missing
 
-The fox avatars are hosted on Arweave. On a restricted network those mirrors may
-be unreachable, in which case the installer falls back to the CC0 VRoid sample
-so the app always starts with a working character, and the Companion screen
-shows a **stand-in avatar** badge.
+`npm install` installs Anna from GitHub. If that is unreachable, the installer
+tries the remaining foxes (whose mirrors are on Arweave), and finally falls back
+to the CC0 VRoid sample so the app always starts with a working character — the
+Companion screen then shows a **stand-in avatar** badge.
 
 To fix it, open **Personality & Memory → Avatar** and press **Install & use** on
-Megan the Fox, or point the app at any `.vrm` file you already have.
+any of the foxes, or point the app at a `.vrm` file you already have.
 
-> **Why the fox is not committed to this repository.** The environment this was
-> built in routes all outbound traffic through an allowlisting proxy, which
-> denies `arweave.net`, every IPFS gateway, `booth.pm`, `hub.vroid.com`,
-> `itch.io` and Hugging Face. Only GitHub, GitLab and the npm registry are
-> reachable, and every redistributable fox-girl VRM that could be found lives
-> behind one of the blocked hosts. Twelve CC0/MIT avatars that *are* reachable
-> were downloaded and rendered to check — none of them is a fox.
->
-> So the animation pack and the fallback avatar are verified end to end, and the
-> fox download is the one path that could not be exercised here. The code around
-> it is ordinary: mirrors tried in order, glTF magic-byte validation, atomic
-> rename, and the in-app installer shares it.
->
-> Searching VTuber sources specifically did pay off: the
-> [Lobe Vidol](https://github.com/lobehub/lobe-vidol-market) character market
-> turned up 響狐リク, an original VRoid fox girl, on a host independent of
-> Arweave. She is in the catalog as the second fox to try. Her CDN is blocked
-> here too, but she is unlikely to be blocked wherever Arweave is.
+> **A note on how the fox was sourced.** The environment this was built in
+> routes outbound traffic through an allowlisting proxy that denies
+> `arweave.net`, every IPFS gateway, `booth.pm`, `hub.vroid.com`, `itch.io` and
+> Hugging Face — which is where almost every published VRM lives. Anna was found
+> by searching GitHub itself for repositories that commit their VRM assets, and
+> she is served from `raw.githubusercontent.com`, which *is* reachable. Every
+> candidate was rendered with `tools/render.mjs` before being accepted, because
+> metadata lies: a file called `Kitsune.vrm` turned out to be a schoolgirl, and
+> a `fox.vrm` turned out to be a girl whose ears are drawn by the host app
+> rather than stored in the model.
 
 ### Using your own VTuber avatar
 

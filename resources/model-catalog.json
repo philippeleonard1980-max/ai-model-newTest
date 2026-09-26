@@ -1,13 +1,35 @@
 {
   "note": "Avatars Kitsune Companion can install. 'mirrors' are tried in order. 'licenseVerified' is true only where the licence was read from a machine-readable source (the CC0 registry entry or the VRM's own metadata); where it is false, the app shows the source page so you can check the terms yourself before using the model.",
-  "foxPreferenceOrder": ["megan-the-fox", "hibiki-fox-riku", "two-tails"],
-  "defaultModelId": "megan-the-fox",
+  "foxPreferenceOrder": [
+    "anna-kitsune",
+    "megan-the-fox",
+    "hibiki-fox-riku",
+    "two-tails"
+  ],
+  "defaultModelId": "anna-kitsune",
   "fallbackModelId": "vroid-sample-girl",
   "models": [
     {
+      "id": "anna-kitsune",
+      "name": "Anna — kitsune girl",
+      "description": "An anime fox girl: white-and-red fox ears, a kitsune-mask marking across half her face, pink hair tied with a kanzashi pin and bell charms. Avatar 270 of the 100 Avatars R3 collection, and the default character for Rin.",
+      "license": "CC0-1.0",
+      "licenseVerified": true,
+      "credit": "Polygonal Mind — 100 Avatars R3, #270 Anna (public domain)",
+      "sourceUrl": "https://www.opensourceavatars.com/",
+      "fox": true,
+      "file": "anna-kitsune.vrm",
+      "approxBytes": 7744412,
+      "mirrors": [
+        "https://raw.githubusercontent.com/blue45f/toonspectrum/main/apps/web/public/vrm/Anna.vrm",
+        "https://arweave.net/RqDioyluCcxDNHFPoXLUlbEQjhP1Fy9HtaGzLFVh0mE",
+        "https://permagate.io/RqDioyluCcxDNHFPoXLUlbEQjhP1Fy9HtaGzLFVh0mE"
+      ]
+    },
+    {
       "id": "megan-the-fox",
       "name": "Megan the Fox",
-      "description": "A fox-girl avatar with ears and tail. Avatar 278 of the 100 Avatars R3 collection. This is the default character for Rin.",
+      "description": "A chibi anthro fox in a hood — upright ears and a muzzle, no tail. Avatar 278 of the 100 Avatars R3 collection. Cartoon rather than anime; a good second choice if you prefer that style.",
       "license": "CC0-1.0",
       "licenseVerified": true,
       "credit": "Polygonal Mind — 100 Avatars R3 (public domain)",
@@ -15,6 +37,7 @@
       "fox": true,
       "file": "megan-the-fox.vrm",
       "mirrors": [
+        "https://raw.githubusercontent.com/blue45f/toonspectrum/main/apps/web/public/vrm/MeganTheFox.vrm",
         "https://arweave.net/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY",
         "https://ar-io.net/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY",
         "https://permagate.io/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY"
