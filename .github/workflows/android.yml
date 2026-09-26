@@ -25,6 +25,9 @@ on:
       - '.github/workflows/android.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -77,10 +80,31 @@ jobs:
 
       - name: Name it after the commit
         id: name
-        run: echo "name=kitsune-companion-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "name=kitsune-companion-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          cp android/app/build/outputs/apk/debug/app-debug.apk kitsune-companion.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.name.outputs.name }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: kitsune-companion.apk
           if-no-files-found: error
+
+      # One moving tag rather than a release per commit, so the download link in
+      # the README never goes stale.
+      - name: Publish it where a phone can download it
+        if: github.ref == 'refs/heads/claude/fox-ai-assistant-app-ms51e2'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Kitsune Companion — latest Android build
+          prerelease: true
+          body: |
+            Debug build of `${{ github.sha }}`.
+
+            Tap **kitsune-companion.apk** below on your phone to install it.
+            Android will ask you to allow installs from your browser, because a
+            debug build is not signed by any store. First launch downloads the
+            avatar and the animation clips, about 15 MB.
+          files: kitsune-companion.apk
+          fail_on_unmatched_files: true

@@ -135,16 +135,21 @@ npm run sync:android # copy it into the Android project
 ### Getting the app onto a phone
 
 You do not need Android Studio, or an Android SDK, or anything on your machine
-at all. Every push builds an APK on GitHub:
+at all. Every push builds an APK on GitHub and publishes it here:
 
-1. Open the repository's **Actions** tab and pick the newest **Android APK** run.
-2. Download the artifact at the bottom — `kitsune-companion-<commit>`.
-3. Unzip it and copy `app-debug.apk` to your phone.
-4. Open it there. Android will ask you to allow installs from that source; it is
-   a debug build, so it is unsigned by any store.
+**[github.com/philippeleonard1980-max/ai-model-newTest/releases/tag/android-latest](https://github.com/philippeleonard1980-max/ai-model-newTest/releases/tag/android-latest)**
+
+Open that on the phone itself and tap `kitsune-companion.apk`. Android will ask
+you to allow installs from your browser, because a debug build carries no store
+signature. The tag always points at the newest build, so the link never goes
+stale.
 
 First launch downloads the avatar and the animation clips (about 15 MB), so give
 it a moment on a connection.
+
+At a desk you can instead take the build artifact from the **Actions** tab. Do
+not try that from a phone: an artifact downloads as a zip and requires a
+signed-in session, and Android can install neither.
 
 `npm run package:win` produces an NSIS installer,
 `release/Kitsune Companion-1.0.0-Setup.exe`. Run it on Windows; building the
