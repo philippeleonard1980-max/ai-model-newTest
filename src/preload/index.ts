@@ -31,6 +31,7 @@ const api = {
     signOut: () => call<AuthState>(IPC.authSignOut),
     getClient: () => call<OAuthClientConfig | null>(IPC.authGetClient),
     setClient: (config: OAuthClientConfig) => call<AuthState>(IPC.authSetClient, config),
+    importClientFile: () => call<AuthState | null>(IPC.authImportClientFile),
     capability: () => call<SetupCapability>(IPC.authCapability),
     autoSetup: () => call<AuthState>(IPC.authAutoSetup),
     onSetupStep: (listener: (step: SetupStep) => void) => {

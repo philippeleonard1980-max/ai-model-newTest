@@ -17,6 +17,7 @@ import type {
 import { hasAdc } from './auth/adc.js';
 import { GCLOUD_INSTALL_URL, gcloudInstalled } from './auth/gcloud.js';
 import { runAutoSetup } from './auth/autosetup.js';
+import { readClientFile } from './auth/client-file.js';
 import {
   getAuthState,
   getClientConfig,
@@ -60,6 +61,19 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       throw new Error('That does not look like a Google OAuth client ID — it should end in ".apps.googleusercontent.com".');
     }
     setClientConfig(config);
+    return getAuthState();
+  });
+  handle<AuthState | null>(IPC.authImportClientFile, async () => {
+    const window = getWindow();
+    if (!window) return null;
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Choose the credentials file you downloaded from Google',
+      filters: [{ name: 'Google OAuth credentials', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+    const picked = result.filePaths[0];
+    if (result.canceled || !picked) return null;
+    setClientConfig(readClientFile(picked));
     return getAuthState();
   });
   handle<OAuthClientConfig | null>(IPC.authGetClient, () => getClientConfig());

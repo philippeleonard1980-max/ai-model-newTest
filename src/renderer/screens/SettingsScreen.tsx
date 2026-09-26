@@ -414,16 +414,31 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
 
         {capability && !capability.hasAdc && !capability.hasGcloud && !running && (
           <div className="callout">
-            Automatic setup drives the <strong>Google Cloud CLI</strong>, which is the one thing you
-            have to install yourself. It is a normal installer and takes a couple of minutes.{' '}
-            <button
-              type="button"
-              className="linkish"
-              onClick={() => void window.kitsune.shell.openExternal(capability.gcloudInstallUrl)}
-            >
-              Download it
-            </button>
-            , then come back and press the button.
+            <p>
+              Google will not let an app sign you in without a registered OAuth client, so one of
+              these two has to happen once. Neither involves an API key, and both end in the same
+              place.
+            </p>
+            <p>
+              <strong>Install the Google Cloud CLI</strong> — a normal installer, a couple of
+              minutes, and then this button does the rest by itself.{' '}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => void window.kitsune.shell.openExternal(capability.gcloudInstallUrl)}
+              >
+                Download it
+              </button>
+              .
+            </p>
+            <p>
+              <strong>Or install nothing</strong> and make the OAuth client yourself: three pages
+              in Google's console, then hand this app the file it gives you.{' '}
+              <button type="button" className="linkish" onClick={() => setShowManual(true)}>
+                Show me how
+              </button>
+              .
+            </p>
           </div>
         )}
 
@@ -458,9 +473,10 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
       {showManual && (
         <div className="manual-setup">
           <p className="muted small">
-            Only needed if you would rather not install the Cloud CLI. Create an OAuth client of
-            type <strong>Desktop app</strong>, and note that a brand-new project also needs its
-            consent screen configured first — that step is what usually trips people up.
+            The no-install route. Work through the three buttons in order, creating an OAuth client
+            of type <strong>Desktop app</strong> on the second. A brand-new project needs its
+            consent screen configured first, which is why that is step one — it is the step that
+            usually trips people up.
           </p>
           <div className="row">
             <button
@@ -485,6 +501,42 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
               3. Enable the API
             </button>
           </div>
+          <p className="muted small">
+            Google finishes by offering the credentials as a <code>.json</code> download. Save it,
+            then give it to the app — there is nothing to copy out of it.
+          </p>
+          <div className="row">
+            <button
+              type="button"
+              className="primary"
+              disabled={busy === 'import'}
+              onClick={async () => {
+                setBusy('import');
+                try {
+                  const next = await window.kitsune.auth.importClientFile();
+                  if (!next) return;                       // picker cancelled
+                  const client = await window.kitsune.auth.getClient();
+                  if (client) {
+                    setClientId(client.clientId);
+                    setClientSecret(client.clientSecret ?? '');
+                  }
+                  await window.kitsune.auth.signIn();
+                  await onAuthChanged();
+                } catch (error) {
+                  onError((error as Error).message);
+                } finally {
+                  setBusy(null);
+                }
+              }}
+            >
+              {busy === 'import'
+                ? 'Waiting for your browser…'
+                : '4. Open the credentials file I downloaded'}
+            </button>
+          </div>
+
+          <details className="muted small">
+            <summary>Or type the client ID in by hand</summary>
           <div className="field">
             <label htmlFor="client-id">OAuth client ID</label>
             <input
@@ -529,6 +581,7 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
               {busy === 'signin' ? 'Waiting for your browser…' : 'Sign in with this client'}
             </button>
           </div>
+          </details>
         </div>
       )}
 

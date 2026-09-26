@@ -38,6 +38,12 @@ export interface KitsuneApi {
      * by its signing certificate instead, so there it is a no-op.
      */
     setClient(config: OAuthClientConfig): Promise<AuthState>;
+    /**
+     * Reads the credentials JSON the Cloud console downloads, so nobody has to
+     * copy an ID out of it by hand. Resolves null if the picker was cancelled.
+     * Android has no file picker and no client to configure, so it is a no-op.
+     */
+    importClientFile(): Promise<AuthState | null>;
     /** What the machine can do: existing credentials, gcloud availability. */
     capability(): Promise<SetupCapability>;
     /** Runs sign-in, project lookup and API enablement end to end. */

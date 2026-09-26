@@ -59,6 +59,9 @@ export const mobileApi = {
     signOut: () => signOut(),
     getClient: async () => getClientConfig(),
     setClient: () => setClientConfig(),
+    // Android identifies the app by its signing certificate, so there is no
+    // client file to import and nothing to pick it with.
+    importClientFile: async () => null,
     // Android's Play Services flow is already one tap, so there is nothing to
     // automate and no CLI to look for.
     capability: async () => ({ hasAdc: false, hasGcloud: false, gcloudInstallUrl: '' }),
