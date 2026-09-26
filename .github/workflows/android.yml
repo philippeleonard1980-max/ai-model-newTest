@@ -41,7 +41,19 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      # The runner image already carries the SDK and its command-line tools.
+      # android-actions/setup-android is not used: it tries to install the
+      # long-obsolete `tools` package, which no longer exists in the SDK
+      # repository, and fails before doing anything useful.
+      - name: Make sure the SDK has the platform this project compiles against
+        run: |
+          set -euo pipefail
+          sdkmanager="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$sdkmanager" ] || sdkmanager=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -name sdkmanager -type f | head -1)
+          compile=$(grep -oP 'compileSdkVersion\s*=\s*\K\d+' android/variables.gradle)
+          echo "compileSdk is $compile"
+          yes | "$sdkmanager" --licenses > /dev/null
+          "$sdkmanager" "platforms;android-$compile" "build-tools;$compile.0.0"
 
       - uses: gradle/actions/setup-gradle@v4
 
