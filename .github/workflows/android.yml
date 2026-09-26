@@ -1,0 +1,71 @@
+# Builds an installable Android APK.
+#
+# This exists because the Android toolchain — the SDK, the Android Gradle
+# Plugin, Play Services — is served from dl.google.com, which not every
+# development environment can reach. A GitHub runner can, and already has the
+# SDK on it, so the build happens here and the APK comes back as a downloadable
+# artifact.
+#
+# It is also the first thing that compiles the Java sign-in plugin, so a
+# mistake in it fails this workflow rather than the app on a phone.
+
+name: Android APK
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'resources/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.ts'
+      - 'vite.mobile.config.ts'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The desktop binary is 100 MB and nothing here runs Electron.
+      - name: Install dependencies
+        run: npm ci
+        env:
+          KITSUNE_SKIP_ELECTRON: '1'
+
+      - name: Build the web bundle and sync it into the Android project
+        run: |
+          npm run build:mobile
+          npx cap sync android
+
+      - name: Assemble the debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name it after the commit
+        id: name
+        run: echo "name=kitsune-companion-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.name }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -15,7 +15,8 @@
  *
  * This never fails the build. Someone installing only to work on the Android
  * shell, or to run the tests, does not need a 100 MB desktop binary, and an
- * offline install should still leave a usable checkout.
+ * offline install should still leave a usable checkout. Set
+ * `KITSUNE_SKIP_ELECTRON` to skip the download outright.
  */
 
 import { existsSync } from 'node:fs';
@@ -36,6 +37,13 @@ function electronModuleDir() {
 }
 
 function main() {
+  // An Android-only build has no use for a 100 MB desktop binary, and the CI
+  // job that produces the APK sets this rather than spending the download.
+  if (process.env['KITSUNE_SKIP_ELECTRON']) {
+    console.log('[electron] KITSUNE_SKIP_ELECTRON set; skipping the binary.');
+    return;
+  }
+
   const moduleDir = electronModuleDir();
   if (moduleDir === null) {
     console.log('[electron] not installed; skipping (fine for Android-only or test-only work).');
