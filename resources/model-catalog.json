@@ -1,0 +1,115 @@
+{
+  "note": "Avatars Kitsune Companion can install. Everything here is CC0 (public domain), so it can be downloaded and redistributed freely. 'mirrors' are tried in order.",
+  "defaultModelId": "megan-the-fox",
+  "fallbackModelId": "vroid-sample-girl",
+  "models": [
+    {
+      "id": "megan-the-fox",
+      "name": "Megan the Fox",
+      "description": "A fox-girl avatar with ears and tail. Avatar 278 of the 100 Avatars R3 collection. This is the default character for Rin.",
+      "license": "CC0-1.0",
+      "credit": "Polygonal Mind — 100 Avatars R3 (public domain)",
+      "fox": true,
+      "file": "megan-the-fox.vrm",
+      "mirrors": [
+        "https://arweave.net/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY",
+        "https://ar-io.net/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY",
+        "https://permagate.io/up4WzT0YJfXv9woGseCIQnBSq3eH8KWASJJbNtuvEWY"
+      ]
+    },
+    {
+      "id": "two-tails",
+      "name": "Two-Tails",
+      "description": "A twin-tailed kitsune avatar. Avatar 284 of the 100 Avatars R3 collection. A good alternative if you want more tails.",
+      "license": "CC0-1.0",
+      "credit": "Polygonal Mind — 100 Avatars R3 (public domain)",
+      "fox": true,
+      "file": "two-tails.vrm",
+      "mirrors": [
+        "https://arweave.net/JE2Ix9bF-9x6r4ovLKsgMoNf6QJQf_NbmTLSq9Hp_OM",
+        "https://ar-io.net/JE2Ix9bF-9x6r4ovLKsgMoNf6QJQf_NbmTLSq9Hp_OM",
+        "https://permagate.io/JE2Ix9bF-9x6r4ovLKsgMoNf6QJQf_NbmTLSq9Hp_OM"
+      ]
+    },
+    {
+      "id": "vroid-sample-girl",
+      "name": "VRoid sample girl (offline fallback)",
+      "description": "The public-domain VRoid Studio sample avatar. Not a fox, but it always downloads, so the app is never left without a working character.",
+      "license": "CC0-1.0",
+      "credit": "pixiv VRoid Studio sample model (public domain)",
+      "fox": false,
+      "file": "vroid-sample-girl.vrm",
+      "approxBytes": 18013268,
+      "mirrors": [
+        "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRM/sample.vrm"
+      ]
+    }
+  ],
+  "animationPack": {
+    "id": "expressive-vrma",
+    "name": "Expressive VRMA pack",
+    "credit": "Idle loop from pixiv ChatVRM; expression clips from tk256ailab/vrm-viewer (MIT)",
+    "clips": [
+      {
+        "name": "idle",
+        "file": "idle.vrma",
+        "url": "https://raw.githubusercontent.com/pixiv/ChatVRM/main/public/idle_loop.vrma"
+      },
+      {
+        "name": "thinking",
+        "file": "thinking.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Thinking.vrma"
+      },
+      {
+        "name": "happy",
+        "file": "happy.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Clapping.vrma"
+      },
+      {
+        "name": "surprised",
+        "file": "surprised.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Surprised.vrma"
+      },
+      {
+        "name": "sad",
+        "file": "sad.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Sad.vrma"
+      },
+      {
+        "name": "angry",
+        "file": "angry.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Angry.vrma"
+      },
+      {
+        "name": "sleepy",
+        "file": "sleepy.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Sleepy.vrma"
+      },
+      {
+        "name": "blush",
+        "file": "blush.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Blush.vrma"
+      },
+      {
+        "name": "playful",
+        "file": "playful.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Jump.vrma"
+      },
+      {
+        "name": "proud",
+        "file": "proud.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Relax.vrma"
+      },
+      {
+        "name": "farewell",
+        "file": "farewell.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/Goodbye.vrma"
+      },
+      {
+        "name": "curious",
+        "file": "curious.vrma",
+        "url": "https://raw.githubusercontent.com/tk256ailab/vrm-viewer/main/VRMA/LookAround.vrma"
+      }
+    ]
+  }
+}

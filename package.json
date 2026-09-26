@@ -1,0 +1,87 @@
+{
+  "name": "kitsune-companion",
+  "version": "1.0.0",
+  "description": "Rin \u2014 a 3D fox-girl AI assistant for Windows, powered by Gemini via Google account sign-in.",
+  "main": "./out/main/index.js",
+  "author": "Kitsune Companion",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "node scripts/fetch-assets.mjs --if-missing",
+    "assets": "node scripts/fetch-assets.mjs",
+    "assets:force": "node scripts/fetch-assets.mjs --force",
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --build --force tsconfig.json",
+    "build": "npm run typecheck && electron-vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package:win": "npm run build && electron-builder --win --publish never",
+    "package:dir": "npm run build && electron-builder --dir --publish never"
+  },
+  "dependencies": {
+    "marked": "^18.0.14"
+  },
+  "devDependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
+    "@pixiv/three-vrm-animation": "^3.5.5",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "^0.186.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^5.0.2"
+  },
+  "build": {
+    "appId": "dev.kitsune.companion",
+    "productName": "Kitsune Companion",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Kitsune Companion"
+    }
+  }
+}
