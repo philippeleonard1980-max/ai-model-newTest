@@ -132,6 +132,20 @@ npm run build:mobile # Android web bundle
 npm run sync:android # copy it into the Android project
 ```
 
+### Getting the app onto a phone
+
+You do not need Android Studio, or an Android SDK, or anything on your machine
+at all. Every push builds an APK on GitHub:
+
+1. Open the repository's **Actions** tab and pick the newest **Android APK** run.
+2. Download the artifact at the bottom — `kitsune-companion-<commit>`.
+3. Unzip it and copy `app-debug.apk` to your phone.
+4. Open it there. Android will ask you to allow installs from that source; it is
+   a debug build, so it is unsigned by any store.
+
+First launch downloads the avatar and the animation clips (about 15 MB), so give
+it a moment on a connection.
+
 `npm run package:win` produces an NSIS installer,
 `release/Kitsune Companion-1.0.0-Setup.exe`. Run it on Windows; building the
 installer itself must be done on Windows (or under Wine).
