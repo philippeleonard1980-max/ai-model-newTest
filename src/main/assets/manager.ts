@@ -109,7 +109,10 @@ export function assetStatus(): AssetStatus {
     modelName: entry?.name ?? (path ? basename(path) : null),
     animations: Object.entries(animationFiles()).map(([name, path]) => ({ name, path })),
     assetsDir: userAssetsDir(),
-    usingFallback: entry ? !entry.fox : path !== null,
+    // Only a known non-fox from our own catalog counts as a stand-in. A file the
+    // user picked themselves is their deliberate choice and may well be a fox we
+    // have no entry for, so it must not raise the badge.
+    usingFallback: entry ? !entry.fox : false,
   };
 }
 

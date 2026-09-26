@@ -79,6 +79,28 @@ describe('rememberInMemory', () => {
   });
 });
 
+describe('rememberInMemory — formatting', () => {
+  it('keeps blank lines inside a section instead of welding paragraphs together', () => {
+    writeMemory(
+      "# Rin's memory\n\n## Notes\n\nFirst paragraph.\n\nSecond paragraph.\n",
+    );
+    rememberInMemory('Notes', 'A new fact.');
+    const { markdown } = readMemory();
+    expect(markdown).toContain('First paragraph.\n\nSecond paragraph.');
+    expect(markdown).toContain('- A new fact.');
+  });
+
+  it('does not accumulate blank lines when written to repeatedly', () => {
+    writeMemory("# Rin's memory\n\n## Notes\n\n_Nothing yet._\n");
+    rememberInMemory('Notes', 'One.');
+    rememberInMemory('Notes', 'Two.');
+    rememberInMemory('Notes', 'Three.');
+    const { markdown } = readMemory();
+    expect(markdown).toContain('- One.\n- Two.\n- Three.');
+    expect(markdown).not.toMatch(/\n{3,}/);
+  });
+});
+
 describe('updateInMemory', () => {
   it('rewrites the matching bullet', () => {
     updateInMemory('Shipping the fox', 'Shipped the fox app.');

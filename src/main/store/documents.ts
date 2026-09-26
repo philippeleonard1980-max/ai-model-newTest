@@ -98,13 +98,16 @@ export function rememberInMemory(section: string, text: string): MemoryOpSummary
     return { op: 'remember', section: section.trim(), detail: text.trim() };
   }
 
-  // Insert after the last non-empty line of the section, dropping placeholders.
+  // Append after the section's last non-empty line. Placeholders go, and blank
+  // lines are trimmed from the ends only — squashing the interior too would weld
+  // the user's own paragraphs together the first time Rin writes here.
   const body = lines.slice(target.start + 1, target.end).filter((l) => !isPlaceholder(l));
+  while (body.length > 0 && body[0]!.trim() === '') body.shift();
   while (body.length > 0 && body[body.length - 1]!.trim() === '') body.pop();
   const rebuilt = [
     ...lines.slice(0, target.start + 1),
     '',
-    ...body.filter((l) => l.trim() !== ''),
+    ...body,
     bullet,
     '',
     ...lines.slice(target.end),
