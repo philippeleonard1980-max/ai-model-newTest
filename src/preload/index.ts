@@ -13,6 +13,8 @@ import type {
   OAuthClientConfig,
   PersonaFile,
   Result,
+  SetupCapability,
+  SetupStep,
 } from '@shared/types';
 
 /** Unwraps the Result envelope so callers can use try/catch normally. */
@@ -29,6 +31,15 @@ const api = {
     signOut: () => call<AuthState>(IPC.authSignOut),
     getClient: () => call<OAuthClientConfig | null>(IPC.authGetClient),
     setClient: (config: OAuthClientConfig) => call<AuthState>(IPC.authSetClient, config),
+    capability: () => call<SetupCapability>(IPC.authCapability),
+    autoSetup: () => call<AuthState>(IPC.authAutoSetup),
+    onSetupStep: (listener: (step: SetupStep) => void) => {
+      const handler = (_event: unknown, step: SetupStep): void => listener(step);
+      ipcRenderer.on(IPC.authSetupStep, handler);
+      return (): void => {
+        ipcRenderer.removeListener(IPC.authSetupStep, handler);
+      };
+    },
   },
   settings: {
     get: () => call<AppSettings>(IPC.settingsGet),

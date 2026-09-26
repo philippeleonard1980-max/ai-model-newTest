@@ -64,6 +64,11 @@ export const mobileApi = {
     signOut: () => signOut(),
     getClient: async () => getClientConfig(),
     setClient: () => setClientConfig(),
+    // Android's Play Services flow is already one tap, so there is nothing to
+    // automate and no CLI to look for.
+    capability: async () => ({ hasAdc: false, hasGcloud: false, gcloudInstallUrl: '' }),
+    autoSetup: () => signIn(),
+    onSetupStep: () => () => undefined,
   },
   settings: {
     get: () => loadSettings(),

@@ -5,6 +5,9 @@ export const IPC = {
   authSignOut: 'auth:sign-out',
   authSetClient: 'auth:set-client',
   authGetClient: 'auth:get-client',
+  authCapability: 'auth:capability',
+  authAutoSetup: 'auth:auto-setup',
+  authSetupStep: 'auth:setup-step',
 
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',

@@ -12,7 +12,11 @@ import type {
   OAuthClientConfig,
   PersonaFile,
   Result,
+  SetupCapability,
 } from '@shared/types';
+import { hasAdc } from './auth/adc.js';
+import { GCLOUD_INSTALL_URL, gcloudInstalled } from './auth/gcloud.js';
+import { runAutoSetup } from './auth/autosetup.js';
 import {
   getAuthState,
   getClientConfig,
@@ -59,6 +63,17 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return getAuthState();
   });
   handle<OAuthClientConfig | null>(IPC.authGetClient, () => getClientConfig());
+  handle<SetupCapability>(IPC.authCapability, () => ({
+    hasAdc: hasAdc(),
+    hasGcloud: gcloudInstalled(),
+    gcloudInstallUrl: GCLOUD_INSTALL_URL,
+  }));
+  handle<AuthState>(IPC.authAutoSetup, async () => {
+    await runAutoSetup((step) => {
+      getWindow()?.webContents.send(IPC.authSetupStep, step);
+    });
+    return getAuthState();
+  });
 
   /* ----------------------------- settings ------------------------------ */
   handle<AppSettings>(IPC.settingsGet, () => loadSettings());

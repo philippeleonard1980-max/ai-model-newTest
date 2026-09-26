@@ -6,8 +6,30 @@
 /** Which Google backend serves `generateContent`. Both use the same OAuth token. */
 export type GeminiBackend = 'generativelanguage' | 'vertex';
 
+/** Which credential the app is currently using. */
+export type AuthMethod = 'adc' | 'oauth-client';
+
+export interface SetupStep {
+  id: 'credentials' | 'project' | 'api' | 'verify';
+  label: string;
+  state: 'running' | 'done' | 'failed';
+  detail?: string;
+  /** A page that helps with this step, opened in the real browser. */
+  helpUrl?: string;
+}
+
+export interface SetupCapability {
+  /** True when Application Default Credentials are already on disk. */
+  hasAdc: boolean;
+  /** True when the Google Cloud CLI can be run. */
+  hasGcloud: boolean;
+  gcloudInstallUrl: string;
+}
+
 export interface AuthState {
   signedIn: boolean;
+  /** Null when not signed in. */
+  method: AuthMethod | null;
   email: string | null;
   /** Epoch millis at which the current access token expires. */
   expiresAt: number | null;

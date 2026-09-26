@@ -46,23 +46,35 @@ is her territory, and she is touchy about the missing two tails.
 
 ## Setting up the Google connection
 
-Rin talks to Gemini using **your Google account over OAuth**. There is no API
-key anywhere in this app — the credential is an OAuth token tied to your
-account, stored encrypted on your machine via Electron's `safeStorage`.
+Rin talks to Gemini using **your Google account**. There is no API key anywhere
+in the app; the credential is an OAuth token tied to your account, stored
+encrypted via Electron's `safeStorage`.
 
-Google still needs to know *which application* is asking, so you create a free
-OAuth client once. It takes about two minutes.
+Open **Personality & Memory → Google & Gemini** and press **Set up
+automatically**. The app then:
 
-1. Open <https://console.cloud.google.com/apis/credentials> and pick or create a
-   project.
-2. Enable the **Generative Language API** for that project.
-   (Or the **Vertex AI API** if you want the Vertex backend instead.)
-3. **Create credentials → OAuth client ID → Application type: Desktop app.**
-4. Copy the client ID into **Personality & Memory → Google & Gemini** and press
-   **Sign in with Google**.
+1. signs you in through your browser,
+2. finds your Google Cloud project,
+3. switches the Gemini API on for it,
+4. makes a test call to prove it worked.
 
-Your browser opens, you approve, and the app catches the redirect on a loopback
-port. The client secret field is optional — the flow uses PKCE.
+Each step reports its own progress, and a failing one explains what happened
+and offers the page that fixes it.
+
+The one thing you install yourself is the
+**[Google Cloud CLI](https://cloud.google.com/sdk/docs/install)** — a normal
+installer. The app drives it so that sign-in happens against Google's own OAuth
+client, which is what removes the need to create a project, configure a consent
+screen and paste a client ID. If you have ever run
+`gcloud auth application-default login`, the app finds those credentials and
+setup is instant.
+
+### Doing it by hand instead
+
+If you would rather not install the CLI, expand **Set it up by hand instead**.
+That path wants an OAuth client of type **Desktop app**, and a brand-new project
+also needs its **consent screen** configured first — that step is the one that
+usually trips people up, and the panel links straight to it.
 
 ### Which backend?
 

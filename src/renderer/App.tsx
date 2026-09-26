@@ -61,10 +61,12 @@ export function App(): JSX.Element {
         setVoices(loadedVoices);
         if (!loadedAuth.clientConfigured) {
           setBanner(
-            'Rin needs a Google sign-in before she can talk. Open Settings to connect your account — it takes about two minutes.',
+            'Rin needs a Google sign-in before she can talk. Open Personality & Memory → Google & Gemini and press “Set up automatically”.',
           );
         } else if (!loadedAuth.signedIn) {
-          setBanner('You are not signed in to Google. Open Settings and sign in.');
+          setBanner(
+            'You are not signed in to Google. Open Personality & Memory → Google & Gemini and press “Set up automatically”.',
+          );
         }
       } catch (error) {
         setBanner((error as Error).message);

@@ -3,6 +3,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { shell, safeStorage } from 'electron';
 import { credentialsPath } from '../store/paths.js';
+import { readAdc } from './adc.js';
 import type { AuthState, OAuthClientConfig } from '@shared/types';
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -264,7 +265,13 @@ export async function getAccessToken(): Promise<string> {
     return creds.accessToken;
   }
   if (!creds.refreshToken) {
-    throw new Error('Not signed in to Google yet. Open Settings and sign in.');
+    // Fall back to Application Default Credentials, which the automatic setup
+    // produces and which need no configuration inside this app at all.
+    const adc = readAdc();
+    if (adc) return adcAccessToken(adc);
+    throw new Error(
+      'Not signed in to Google yet. Open Settings and press “Set up automatically”.',
+    );
   }
 
   const form: Record<string, string> = {
@@ -294,6 +301,25 @@ export async function getAccessToken(): Promise<string> {
   return token.access_token;
 }
 
+/** Cached ADC access token; the file holds only a refresh token. */
+let adcToken: { value: string; expiresAt: number } | null = null;
+
+async function adcAccessToken(adc: NonNullable<ReturnType<typeof readAdc>>): Promise<string> {
+  if (adcToken && adcToken.expiresAt - Date.now() > 60_000) return adcToken.value;
+  const form: Record<string, string> = {
+    client_id: adc.clientId,
+    refresh_token: adc.refreshToken,
+    grant_type: 'refresh_token',
+  };
+  if (adc.clientSecret) form['client_secret'] = adc.clientSecret;
+  const token = (await postForm(TOKEN_ENDPOINT, form)) as {
+    access_token: string;
+    expires_in: number;
+  };
+  adcToken = { value: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 };
+  return token.access_token;
+}
+
 export async function signOut(): Promise<AuthState> {
   const creds = readCredentials();
   const revocable = creds.refreshToken ?? creds.accessToken;
@@ -304,6 +330,7 @@ export async function signOut(): Promise<AuthState> {
       // Revocation is best-effort; local credentials are cleared regardless.
     }
   }
+  adcToken = null;
   const client = creds.client;
   const cleared: StoredCredentials = { ...structuredClone(EMPTY), client };
   writeCredentials(cleared);
@@ -316,11 +343,17 @@ export function forgetEverything(): void {
 }
 
 function toState(creds: StoredCredentials): AuthState {
+  const manual = Boolean(creds.refreshToken ?? creds.accessToken);
+  const adc = readAdc();
   return {
-    signedIn: Boolean(creds.refreshToken ?? creds.accessToken),
+    // A manually configured client wins if present, but Application Default
+    // Credentials alone are enough to be signed in — that is the whole point of
+    // the automatic route.
+    signedIn: manual || adc !== null,
+    method: manual ? 'oauth-client' : adc ? 'adc' : null,
     email: creds.email,
-    expiresAt: creds.expiresAt,
-    clientConfigured: Boolean(creds.client.clientId),
+    expiresAt: manual ? creds.expiresAt : null,
+    clientConfigured: Boolean(creds.client.clientId) || adc !== null,
   };
 }
 

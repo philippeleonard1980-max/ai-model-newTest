@@ -9,6 +9,8 @@ import type {
   MemoryFile,
   OAuthClientConfig,
   PersonaFile,
+  SetupCapability,
+  SetupStep,
 } from './types';
 
 export interface ModelOption {
@@ -36,6 +38,12 @@ export interface KitsuneApi {
      * by its signing certificate instead, so there it is a no-op.
      */
     setClient(config: OAuthClientConfig): Promise<AuthState>;
+    /** What the machine can do: existing credentials, gcloud availability. */
+    capability(): Promise<SetupCapability>;
+    /** Runs sign-in, project lookup and API enablement end to end. */
+    autoSetup(): Promise<AuthState>;
+    /** Progress from autoSetup. Returns an unsubscribe function. */
+    onSetupStep(listener: (step: SetupStep) => void): () => void;
   };
   settings: {
     get(): Promise<AppSettings>;

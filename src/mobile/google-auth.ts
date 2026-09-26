@@ -68,6 +68,8 @@ export async function getAuthState(): Promise<AuthState> {
   const { token, expiresAt, email } = await cached();
   return {
     signedIn: Boolean(token),
+    // Android always goes through Play Services rather than a pasted client.
+    method: token ? 'oauth-client' : null,
     email,
     expiresAt: expiresAt || null,
     // Android registers its OAuth client by package name and signing

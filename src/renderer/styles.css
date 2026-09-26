@@ -793,3 +793,107 @@ kbd {
   background: color-mix(in srgb, var(--warn) 20%, transparent);
   color: var(--warn);
 }
+
+/* ------------------------------ guided setup ----------------------------- */
+
+.setup-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.setup-card.ready {
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.setup-head {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.setup-head h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.setup-head button {
+  flex-shrink: 0;
+}
+
+.setup-steps {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setup-step {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+}
+
+.setup-mark {
+  flex-shrink: 0;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.setup-step.done .setup-mark {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.setup-step.failed .setup-mark {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+}
+
+.setup-step.running .setup-mark {
+  color: var(--fox-soft);
+  border-color: color-mix(in srgb, var(--fox) 50%, transparent);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% { opacity: 0.35; }
+}
+
+.setup-step.done .setup-label {
+  color: var(--muted);
+}
+
+.setup-detail {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.setup-step.failed .setup-detail {
+  color: var(--danger);
+}
+
+.disclosure {
+  display: inline-block;
+  margin-bottom: 0.9rem;
+  font-size: 0.86rem;
+}
+
+.manual-setup {
+  border-left: 2px solid var(--line);
+  padding-left: 0.9rem;
+  margin-bottom: 1rem;
+}

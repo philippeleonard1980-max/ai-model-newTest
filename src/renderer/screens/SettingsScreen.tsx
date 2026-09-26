@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import type { ModelOption } from '@shared/api';
 import type {
   AppSettings,
   AssetStatus,
@@ -7,6 +8,8 @@ import type {
   CatalogEntry,
   DownloadProgress,
   GeminiBackend,
+  SetupCapability,
+  SetupStep,
 } from '@shared/types';
 import type { Speaker } from '../voice/speech';
 import { MarkdownBlock } from '../components/MarkdownBlock';
@@ -281,25 +284,44 @@ function MemoryPanel({
 /* ---------------------------- google + gemini --------------------------- */
 
 const SETUP_URL = 'https://console.cloud.google.com/apis/credentials';
+const CONSENT_URL = 'https://console.cloud.google.com/apis/credentials/consent';
+const ENABLE_API_URL =
+  'https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com';
 
 function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }: Props): JSX.Element {
+  const [capability, setCapability] = useState<SetupCapability | null>(null);
+  const [steps, setSteps] = useState<SetupStep[]>([]);
+  const [running, setRunning] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
-  const [models, setModels] = useState<Array<{ id: string; label: string }>>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const client = await window.kitsune.auth.getClient();
+        const [client, caps] = await Promise.all([
+          window.kitsune.auth.getClient(),
+          window.kitsune.auth.capability(),
+        ]);
         if (client) {
           setClientId(client.clientId);
           setClientSecret(client.clientSecret ?? '');
         }
+        setCapability(caps);
       } catch (error) {
         onError((error as Error).message);
       }
     })();
+    // Progress arrives step by step; replace an existing step of the same id so
+    // "running" turns into "done" in place rather than stacking up.
+    return window.kitsune.auth.onSetupStep((step) =>
+      setSteps((previous) => {
+        const next = previous.filter((entry) => entry.id !== step.id);
+        return [...next, step];
+      }),
+    );
   }, [onError]);
 
   const patch = async (change: Partial<AppSettings['gemini']>): Promise<void> => {
@@ -310,109 +332,188 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
     }
   };
 
+  const setUp = async (): Promise<void> => {
+    setRunning(true);
+    setSteps([]);
+    try {
+      await window.kitsune.auth.autoSetup();
+      await onAuthChanged();
+    } catch (error) {
+      // The failing step already explains itself in the checklist, so the
+      // banner would only repeat it.
+      if (steps.every((step) => step.state !== 'failed')) onError((error as Error).message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const ready = auth?.signedIn === true;
+
   return (
     <section className="panel scroll">
       <h2>Google account</h2>
       <p className="lead">
-        Rin talks to Gemini using your Google account over OAuth — there is no API key anywhere in
-        this app. You do need to create a free OAuth client once so Google knows which app is
-        asking; it takes about two minutes.
+        Rin talks to Gemini through your own Google account. No API key, and nothing to copy or
+        paste — press the button and the app does the rest.
       </p>
 
-      <ol className="steps">
-        <li>
-          Open the{' '}
-          <button type="button" className="linkish" onClick={() => void window.kitsune.shell.openExternal(SETUP_URL)}>
-            Google Cloud credentials page
-          </button>{' '}
-          and pick (or create) a project.
-        </li>
-        <li>
-          Enable the <strong>Generative Language API</strong> for that project (or the{' '}
-          <strong>Vertex AI API</strong> if you prefer that backend below).
-        </li>
-        <li>
-          Choose <strong>Create credentials → OAuth client ID → Desktop app</strong>.
-        </li>
-        <li>Paste the client ID here. The client secret is optional — this app uses PKCE.</li>
-      </ol>
-
-      <div className="field">
-        <label htmlFor="client-id">OAuth client ID</label>
-        <input
-          id="client-id"
-          value={clientId}
-          spellCheck={false}
-          placeholder="1234567890-abcdefg.apps.googleusercontent.com"
-          onChange={(event) => setClientId(event.target.value)}
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="client-secret">Client secret (optional)</label>
-        <input
-          id="client-secret"
-          value={clientSecret}
-          type="password"
-          spellCheck={false}
-          onChange={(event) => setClientSecret(event.target.value)}
-        />
-      </div>
-
-      <div className="row">
-        <button
-          type="button"
-          className="ghost"
-          onClick={async () => {
-            try {
-              await window.kitsune.auth.setClient({ clientId, clientSecret: clientSecret || undefined });
-              await onAuthChanged();
-            } catch (error) {
-              onError((error as Error).message);
-            }
-          }}
-        >
-          Save client
-        </button>
-        {auth?.signedIn ? (
-          <button
-            type="button"
-            className="ghost"
-            onClick={async () => {
-              try {
-                await window.kitsune.auth.signOut();
-                await onAuthChanged();
-              } catch (error) {
-                onError((error as Error).message);
-              }
-            }}
-          >
-            Sign out
+      <div className={ready ? 'setup-card ready' : 'setup-card'}>
+        <div className="setup-head">
+          <div>
+            <h3>{ready ? 'Connected' : 'Set up Gemini'}</h3>
+            <p className="muted small">
+              {ready
+                ? auth?.method === 'adc'
+                  ? `Signed in with your Google account${auth?.email ? ` (${auth.email})` : ''}.`
+                  : 'Signed in with your own OAuth client.'
+                : 'Signs you in, finds your Google Cloud project and switches the Gemini API on.'}
+            </p>
+          </div>
+          <button type="button" className="primary" disabled={running} onClick={() => void setUp()}>
+            {running ? 'Setting up…' : ready ? 'Run setup again' : 'Set up automatically'}
           </button>
-        ) : (
-          <button
-            type="button"
-            className="primary"
-            disabled={busy === 'signin'}
-            onClick={async () => {
-              setBusy('signin');
-              try {
-                await window.kitsune.auth.setClient({ clientId, clientSecret: clientSecret || undefined });
-                await window.kitsune.auth.signIn();
-                await onAuthChanged();
-              } catch (error) {
-                onError((error as Error).message);
-              } finally {
-                setBusy(null);
-              }
-            }}
-          >
-            {busy === 'signin' ? 'Waiting for your browser…' : 'Sign in with Google'}
-          </button>
+        </div>
+
+        {steps.length > 0 && (
+          <ol className="setup-steps">
+            {steps.map((step) => (
+              <li key={step.id} className={`setup-step ${step.state}`}>
+                <span className="setup-mark" aria-hidden="true">
+                  {step.state === 'done' ? '✓' : step.state === 'failed' ? '!' : '·'}
+                </span>
+                <div>
+                  <span className="setup-label">{step.label}</span>
+                  {step.detail && <p className="setup-detail">{step.detail}</p>}
+                  {step.helpUrl && (
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => void window.kitsune.shell.openExternal(step.helpUrl!)}
+                    >
+                      Open the page that fixes this
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
         )}
-        <span className={auth?.signedIn ? 'status ok' : 'status warn'}>
-          {auth?.signedIn ? `Signed in as ${auth.email ?? 'your Google account'}` : 'Not signed in'}
-        </span>
+
+        {capability && !capability.hasAdc && !capability.hasGcloud && !running && (
+          <div className="callout">
+            Automatic setup drives the <strong>Google Cloud CLI</strong>, which is the one thing you
+            have to install yourself. It is a normal installer and takes a couple of minutes.{' '}
+            <button
+              type="button"
+              className="linkish"
+              onClick={() => void window.kitsune.shell.openExternal(capability.gcloudInstallUrl)}
+            >
+              Download it
+            </button>
+            , then come back and press the button.
+          </div>
+        )}
+
+        {ready && (
+          <div className="row">
+            <button
+              type="button"
+              className="ghost"
+              onClick={async () => {
+                try {
+                  await window.kitsune.auth.signOut();
+                  await onAuthChanged();
+                } catch (error) {
+                  onError((error as Error).message);
+                }
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        )}
       </div>
+
+      <button type="button" className="linkish disclosure" onClick={() => setShowManual(!showManual)}>
+        {showManual ? 'Hide' : 'Set it up by hand instead'}
+      </button>
+
+      {showManual && (
+        <div className="manual-setup">
+          <p className="muted small">
+            Only needed if you would rather not install the Cloud CLI. Create an OAuth client of
+            type <strong>Desktop app</strong>, and note that a brand-new project also needs its
+            consent screen configured first — that step is what usually trips people up.
+          </p>
+          <div className="row">
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => void window.kitsune.shell.openExternal(CONSENT_URL)}
+            >
+              1. Consent screen
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => void window.kitsune.shell.openExternal(SETUP_URL)}
+            >
+              2. Create the client
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => void window.kitsune.shell.openExternal(ENABLE_API_URL)}
+            >
+              3. Enable the API
+            </button>
+          </div>
+          <div className="field">
+            <label htmlFor="client-id">OAuth client ID</label>
+            <input
+              id="client-id"
+              value={clientId}
+              spellCheck={false}
+              placeholder="1234567890-abcdefg.apps.googleusercontent.com"
+              onChange={(event) => setClientId(event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="client-secret">Client secret (optional — this app uses PKCE)</label>
+            <input
+              id="client-secret"
+              value={clientSecret}
+              type="password"
+              spellCheck={false}
+              onChange={(event) => setClientSecret(event.target.value)}
+            />
+          </div>
+          <div className="row">
+            <button
+              type="button"
+              className="ghost"
+              disabled={busy === 'signin'}
+              onClick={async () => {
+                setBusy('signin');
+                try {
+                  await window.kitsune.auth.setClient({
+                    clientId,
+                    clientSecret: clientSecret || undefined,
+                  });
+                  await window.kitsune.auth.signIn();
+                  await onAuthChanged();
+                } catch (error) {
+                  onError((error as Error).message);
+                } finally {
+                  setBusy(null);
+                }
+              }}
+            >
+              {busy === 'signin' ? 'Waiting for your browser…' : 'Sign in with this client'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <hr />
 
@@ -425,7 +526,7 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
             value={settings.gemini.backend}
             onChange={(event) => void patch({ backend: event.target.value as GeminiBackend })}
           >
-            <option value="generativelanguage">Gemini API (free tier, no billing needed)</option>
+            <option value="generativelanguage">Gemini API (recommended)</option>
             <option value="vertex">Vertex AI (needs a billed Cloud project)</option>
           </select>
         </div>
@@ -467,12 +568,13 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
         </div>
         <div className="field">
           <label htmlFor="project">
-            Cloud project ID {settings.gemini.backend === 'vertex' ? '(required)' : '(optional)'}
+            Cloud project {settings.gemini.backend === 'vertex' ? '(required)' : '(filled in by setup)'}
           </label>
           <input
             id="project"
             value={settings.gemini.projectId ?? ''}
             spellCheck={false}
+            placeholder={settings.gemini.backend === 'vertex' ? 'my-project-id' : 'set automatically'}
             onChange={(event) => void patch({ projectId: event.target.value })}
           />
         </div>
