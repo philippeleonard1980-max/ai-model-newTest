@@ -135,9 +135,18 @@ public class GoogleAuthPlugin extends Plugin {
 
     @PluginMethod
     public void signOut(PluginCall call) {
-        // Drops the local grant so the next authorize() asks again.
-        Identity.getAuthorizationClient(getActivity())
-            .clearToken()
+        // AuthorizationClient has no revoke or clear-token call: the grant it
+        // returns lives in the user's Google account, not on the device, and is
+        // withdrawn at myaccount.google.com/permissions. What can be dropped
+        // here is the saved sign-in state, so the account chooser appears again
+        // rather than silently reusing the last account.
+        //
+        // Either way this resolves. The JavaScript side discards its cached
+        // token as soon as it returns, which is what "signed out" means to the
+        // rest of the app, and a failure to clear a local hint must not leave
+        // the UI stuck signed in.
+        Identity.getSignInClient(getActivity())
+            .signOut()
             .addOnSuccessListener(ignored -> call.resolve())
             .addOnFailureListener(error -> call.resolve());
     }
@@ -147,14 +156,14 @@ public class GoogleAuthPlugin extends Plugin {
         if (raw == null) {
             return scopes;
         }
-        try {
-            for (String scope : raw.toList()) {
-                if (scope != null && !scope.trim().isEmpty()) {
-                    scopes.add(new Scope(scope));
-                }
+        // Read by index with optString rather than toList(): JSArray.toList()
+        // is generic, so a for-each over it infers Object, and optString also
+        // tolerates a non-string entry instead of throwing on the whole array.
+        for (int i = 0; i < raw.length(); i++) {
+            String scope = raw.optString(i, "").trim();
+            if (!scope.isEmpty()) {
+                scopes.add(new Scope(scope));
             }
-        } catch (org.json.JSONException ignored) {
-            // A malformed array is reported by the empty-list check above.
         }
         return scopes;
     }
