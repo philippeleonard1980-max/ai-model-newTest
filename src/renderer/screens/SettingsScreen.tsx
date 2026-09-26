@@ -12,6 +12,8 @@ import type { Speaker } from '../voice/speech';
 import { MarkdownBlock } from '../components/MarkdownBlock';
 
 interface Props {
+  /** True while the settings screen is the visible one. */
+  active: boolean;
   settings: AppSettings;
   auth: AuthState | null;
   assets: AssetStatus | null;
@@ -53,7 +55,7 @@ export function SettingsScreen(props: Props): JSX.Element {
 
       <div className="settings-body">
         {tab === 'personality' && <PersonalityPanel onError={props.onError} />}
-        {tab === 'memory' && <MemoryPanel onError={props.onError} />}
+        {tab === 'memory' && <MemoryPanel visible={props.active} onError={props.onError} />}
         {tab === 'connection' && <ConnectionPanel {...props} />}
         {tab === 'avatar' && <AvatarPanel {...props} />}
         {tab === 'voice' && <VoicePanel {...props} />}
@@ -154,7 +156,13 @@ function PersonalityPanel({ onError }: { onError: (message: string) => void }): 
 
 /* ------------------------------- memory -------------------------------- */
 
-function MemoryPanel({ onError }: { onError: (message: string) => void }): JSX.Element {
+function MemoryPanel({
+  visible,
+  onError,
+}: {
+  visible: boolean;
+  onError: (message: string) => void;
+}): JSX.Element {
   const [markdown, setMarkdown] = useState('');
   const [saved, setSaved] = useState('');
   const [path, setPath] = useState('');
@@ -176,17 +184,19 @@ function MemoryPanel({ onError }: { onError: (message: string) => void }): JSX.E
     void load();
   }, [load]);
 
-  // Rin writes to this file behind the scenes, so re-read it when the tab is
-  // shown again rather than trusting the copy we loaded on mount.
-  useEffect(() => {
-    const onFocus = (): void => {
-      if (mode === 'preview') void load();
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [load, mode]);
-
   const dirty = markdown !== saved;
+
+  // Rin rewrites this file behind the scenes while you are on the other screen,
+  // and this panel stays mounted across screen switches, so the copy loaded on
+  // mount goes stale. Re-read whenever the panel comes back into view. A window
+  // `focus` listener is not enough: switching screens inside the app never
+  // fires one. Unsaved edits win, so re-reading cannot discard your typing.
+  useEffect(() => {
+    if (visible && !dirty) void load();
+    // `dirty` is deliberately not a dependency: this should fire when the panel
+    // becomes visible, not every time the textarea changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, load]);
 
   return (
     <section className="panel">
@@ -216,6 +226,17 @@ function MemoryPanel({ onError }: { onError: (message: string) => void }): JSX.E
             disabled={!dirty}
             onClick={async () => {
               try {
+                // Rin may have written to the file since this buffer was loaded.
+                // Overwriting that silently would destroy a memory she just made.
+                const current = await window.kitsune.memory.get();
+                if (current.markdown !== saved) {
+                  const overwrite = confirm(
+                    'Rin has changed her memory since you started editing.\n\n' +
+                      'Saving now replaces her version with yours. Cancel to keep hers ' +
+                      'and press Reload to see it.',
+                  );
+                  if (!overwrite) return;
+                }
                 const memory = await window.kitsune.memory.set(markdown);
                 setSaved(memory.markdown);
                 setStatus('Saved.');

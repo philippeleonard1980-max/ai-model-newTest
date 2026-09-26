@@ -156,6 +156,7 @@ export function App(): JSX.Element {
         </div>
         <div hidden={screen !== 'settings'} className="screen-pane">
           <SettingsScreen
+            active={screen === 'settings'}
             settings={settings}
             auth={auth}
             assets={assets}
