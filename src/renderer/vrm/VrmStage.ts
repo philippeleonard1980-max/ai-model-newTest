@@ -31,11 +31,27 @@ const EMOTION_MAP: Record<Emotion, { clip: string; expression?: string; weight: 
 /** Visemes cycled through while speaking, to suggest articulation. */
 const VISEMES = ['aa', 'ih', 'ou', 'ee', 'oh'] as const;
 
+/** How much of the avatar to fill the view with. */
+export type Framing = 'full' | 'upper' | 'face';
+
 export interface StageOptions {
-  cameraHeight: number;
-  cameraDistance: number;
+  framing: Framing;
   lookAtCursor: boolean;
 }
+
+/** Where to aim and how far back to sit, as fractions of the model's height. */
+const FRAMING: Record<Framing, { aim: number; fill: number }> = {
+  // `aim` is measured down from the top of the head, `fill` is how much of the
+  // model's height should occupy the frame.
+  full: { aim: 0.5, fill: 1.08 },
+  upper: { aim: 0.18, fill: 0.5 },
+  face: { aim: 0.07, fill: 0.22 },
+};
+
+const MIN_PITCH = -0.9;
+const MAX_PITCH = 1.2;
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 3;
 
 export class VrmStage {
   private readonly renderer: THREE.WebGLRenderer;
@@ -53,6 +69,25 @@ export class VrmStage {
   private readonly lookTarget = new THREE.Object3D();
   private readonly pointer = new THREE.Vector2(0, 0);
   private options: StageOptions;
+
+  /* -- camera rig ---------------------------------------------------- */
+  /** Computed from the loaded model so any avatar is framed correctly. */
+  private modelTop = 1.6;
+  private modelHeight = 1.6;
+  private modelCentreX = 0;
+  private modelCentreZ = 0;
+  /** Orbit around the subject, driven by the mouse. */
+  private yaw = 0;
+  private pitch = 0;
+  private zoom = 1;
+  private panY = 0;
+  /** Where the camera is aiming now, and where it wants to aim. */
+  private readonly aimNow = new THREE.Vector3();
+  private readonly aimGoal = new THREE.Vector3();
+  private aimInitialised = false;
+  private dragging: 'orbit' | 'pan' | null = null;
+  private lastDrag = { x: 0, y: 0 };
+  private disposeInput: (() => void) | null = null;
 
   private emotion: Emotion = 'neutral';
   private emotionWeight = 0;
@@ -78,9 +113,10 @@ export class VrmStage {
     // no visible gain on a character this size.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    this.camera = new THREE.PerspectiveCamera(28, 1, 0.1, 40);
+    this.camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
     this.scene.add(this.lookTarget);
     this.setupLights();
+    this.attachInput();
     this.applyCamera();
 
     this.loader.register((parser) => new VRMLoaderPlugin(parser));
@@ -107,15 +143,160 @@ export class VrmStage {
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.85));
   }
 
+  /**
+   * Places the camera from the loaded model's own measurements rather than
+   * fixed world coordinates. A hard-coded height only ever frames one avatar
+   * correctly; every other model ends up cropped — which is exactly what
+   * happened before, showing nothing but a forehead.
+   */
+  /**
+   * Where the camera should be looking.
+   *
+   * A bounding box is taken from the bind pose, so it cannot follow the avatar
+   * once an animation starts moving her — which is how she ended up drifting
+   * out of frame. The humanoid bones give live world positions, so the shot
+   * stays on her however she moves, and works for any rig.
+   */
+  private computeAim(): THREE.Vector3 {
+    const { aim } = FRAMING[this.options.framing] ?? FRAMING.upper;
+    const humanoid = this.vrm?.humanoid;
+
+    if (humanoid) {
+      const head = humanoid.getNormalizedBoneNode('head');
+      const hips = humanoid.getNormalizedBoneNode('hips');
+      if (head && hips) {
+        const headPos = head.getWorldPosition(new THREE.Vector3());
+        const hipsPos = hips.getWorldPosition(new THREE.Vector3());
+        // The head bone sits inside the skull, so lift a little to centre the face.
+        const crown = headPos.y + this.modelHeight * 0.07;
+        const span = Math.max(0.05, crown - hipsPos.y);
+        return new THREE.Vector3(
+          (headPos.x + hipsPos.x) / 2,
+          crown - span * (aim / 0.5),
+          (headPos.z + hipsPos.z) / 2,
+        );
+      }
+    }
+    // No humanoid rig: fall back to the measured box.
+    return new THREE.Vector3(
+      this.modelCentreX,
+      this.modelTop - this.modelHeight * aim,
+      this.modelCentreZ,
+    );
+  }
+
   private applyCamera(): void {
-    const { cameraHeight, cameraDistance } = this.options;
-    this.camera.position.set(0, cameraHeight, cameraDistance);
-    this.camera.lookAt(0, cameraHeight - 0.05, 0);
+    const { fill } = FRAMING[this.options.framing] ?? FRAMING.upper;
+
+    const target = this.aimNow.clone();
+    target.y += this.panY;
+
+    // Distance that makes `fill` of the model's height span the viewport,
+    // accounting for the aspect ratio so a narrow window pulls back instead of
+    // cropping the sides.
+    const vFov = (this.camera.fov * Math.PI) / 180;
+    const wanted = this.modelHeight * fill;
+    const byHeight = wanted / 2 / Math.tan(vFov / 2);
+    const byWidth = byHeight / Math.max(0.35, this.camera.aspect);
+    const distance = Math.max(byHeight, byWidth) * this.zoom;
+
+    const cosPitch = Math.cos(this.pitch);
+    this.camera.position.set(
+      target.x + Math.sin(this.yaw) * cosPitch * distance,
+      target.y + Math.sin(this.pitch) * distance,
+      target.z + Math.cos(this.yaw) * cosPitch * distance,
+    );
+    this.camera.lookAt(target);
+  }
+
+  /** Measures the avatar so framing works for any model, of any size. */
+  private measureModel(vrm: VRM): void {
+    const box = new THREE.Box3().setFromObject(vrm.scene);
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const centre = box.getCenter(new THREE.Vector3());
+    this.modelTop = box.max.y;
+    this.modelHeight = Math.max(0.2, size.y);
+    this.modelCentreX = centre.x;
+    this.modelCentreZ = centre.z;
+  }
+
+  /** Returns to the framing preset, discarding any orbiting the user did. */
+  resetView(): void {
+    this.aimInitialised = false;
+    this.yaw = 0;
+    this.pitch = 0;
+    this.zoom = 1;
+    this.panY = 0;
+    this.applyCamera();
   }
 
   setOptions(options: StageOptions): void {
+    const framingChanged = options.framing !== this.options.framing;
     this.options = options;
-    this.applyCamera();
+    if (framingChanged) this.resetView();
+    else this.applyCamera();
+  }
+
+  /* --------------------------- mouse controls --------------------------- */
+
+  private attachInput(): void {
+    const canvas = this.canvas;
+
+    const down = (event: PointerEvent): void => {
+      // Left drag orbits; right drag, or holding shift, slides the framing up
+      // and down so you can look at the face or the feet.
+      this.dragging = event.button === 2 || event.shiftKey ? 'pan' : 'orbit';
+      this.lastDrag = { x: event.clientX, y: event.clientY };
+      canvas.setPointerCapture(event.pointerId);
+    };
+
+    const move = (event: PointerEvent): void => {
+      if (!this.dragging) return;
+      const dx = event.clientX - this.lastDrag.x;
+      const dy = event.clientY - this.lastDrag.y;
+      this.lastDrag = { x: event.clientX, y: event.clientY };
+
+      if (this.dragging === 'orbit') {
+        this.yaw -= dx * 0.008;
+        this.pitch = Math.min(MAX_PITCH, Math.max(MIN_PITCH, this.pitch + dy * 0.006));
+      } else {
+        // Scale the pan by model height so it feels the same on any avatar.
+        this.panY += (dy / canvas.clientHeight) * this.modelHeight * 1.2;
+      }
+      this.applyCamera();
+    };
+
+    const up = (event: PointerEvent): void => {
+      this.dragging = null;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    };
+
+    const wheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      const factor = Math.exp(event.deltaY * 0.0012);
+      this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * factor));
+      this.applyCamera();
+    };
+
+    // Right-drag is a pan, so the context menu would fight it.
+    const context = (event: Event): void => event.preventDefault();
+
+    canvas.addEventListener('pointerdown', down);
+    canvas.addEventListener('pointermove', move);
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('wheel', wheel, { passive: false });
+    canvas.addEventListener('contextmenu', context);
+
+    this.disposeInput = () => {
+      canvas.removeEventListener('pointerdown', down);
+      canvas.removeEventListener('pointermove', move);
+      canvas.removeEventListener('pointerup', up);
+      canvas.removeEventListener('pointercancel', up);
+      canvas.removeEventListener('wheel', wheel);
+      canvas.removeEventListener('contextmenu', context);
+    };
   }
 
   private resize(): void {
@@ -125,6 +306,8 @@ export class VrmStage {
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+    // Framing distance depends on the aspect ratio, so re-solve it.
+    this.applyCamera();
   }
 
   /** Normalised pointer position in [-1, 1], used for head and eye tracking. */
@@ -149,6 +332,8 @@ export class VrmStage {
 
     this.vrm = vrm;
     this.scene.add(vrm.scene);
+    this.measureModel(vrm);
+    this.resetView();
 
     if (vrm.lookAt) vrm.lookAt.target = this.lookTarget;
 
@@ -273,6 +458,7 @@ export class VrmStage {
 
     const vrm = this.vrm;
     if (vrm) {
+      this.updateAim(delta);
       this.updateLookAt(delta);
       this.updateBlink(delta);
       this.updateExpression(delta, now);
@@ -283,11 +469,28 @@ export class VrmStage {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /**
+   * Eases the camera onto the subject. Snapping every frame would make idle
+   * sway shake the whole view, so this lags behind deliberately.
+   */
+  private updateAim(delta: number): void {
+    this.aimGoal.copy(this.computeAim());
+    if (!this.aimInitialised) {
+      this.aimNow.copy(this.aimGoal);
+      this.aimInitialised = true;
+    } else {
+      this.aimNow.lerp(this.aimGoal, Math.min(1, delta * 2.5));
+    }
+    this.applyCamera();
+  }
+
   private updateLookAt(delta: number): void {
-    const height = this.options.cameraHeight;
+    // She looks toward the camera, offset by where the cursor is, so the gaze
+    // stays believable from whatever angle the user has orbited to.
+    const eye = this.camera.position;
     const target = this.options.lookAtCursor
-      ? new THREE.Vector3(this.pointer.x * 0.6, height + this.pointer.y * 0.35, this.options.cameraDistance)
-      : new THREE.Vector3(0, height, this.options.cameraDistance);
+      ? new THREE.Vector3(eye.x + this.pointer.x * 0.5, eye.y + this.pointer.y * 0.3, eye.z)
+      : eye.clone();
     // Ease rather than snap, so the head turn reads as deliberate.
     this.lookTarget.position.lerp(target, Math.min(1, delta * 4));
   }
@@ -386,6 +589,8 @@ export class VrmStage {
 
   dispose(): void {
     this.stop();
+    this.disposeInput?.();
+    this.disposeInput = null;
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.disposeModel();

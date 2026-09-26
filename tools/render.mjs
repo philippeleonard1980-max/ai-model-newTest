@@ -56,8 +56,12 @@ const result = await page.evaluate((o) => window.renderVrm(o), {
   view: opt('view', 'full'),
   yaw: Number(opt('yaw', 0)),
   frameTime: Number(opt('time', 0)),
+  combine: args.includes('--combine'),
 });
-console.log('  bounds', result.size.map((n) => n.toFixed(2)).join(' x '), '| name', result.meta);
+console.log('  bounds', result.size.map((n) => n.toFixed(3)).join(' x '), '| name', result.meta);
+console.log('  centre', result.centre.map((n) => n.toFixed(3)).join(', '));
+console.log('  min   ', result.min.map((n) => n.toFixed(3)).join(', '));
+console.log('  max   ', result.max.map((n) => n.toFixed(3)).join(', '));
 
 await page.locator('canvas').screenshot({ path: opt('out', 'render.png') });
 console.log('  wrote', opt('out', 'render.png'));

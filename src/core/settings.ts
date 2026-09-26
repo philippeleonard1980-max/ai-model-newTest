@@ -19,8 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   avatar: {
     modelPath: null,
-    cameraHeight: 1.32,
-    cameraDistance: 1.9,
+    framing: 'upper',
     lookAtCursor: true,
   },
 };
@@ -30,9 +29,18 @@ export function mergeSettings(stored: unknown): AppSettings {
   const base: AppSettings = structuredClone(DEFAULT_SETTINGS);
   if (!stored || typeof stored !== 'object') return base;
   const s = stored as Partial<AppSettings>;
+  const avatar = { ...base.avatar, ...(s.avatar ?? {}) };
+  // Older installs stored fixed camera coordinates, which framed exactly one
+  // model correctly. Drop them in favour of a framing preset.
+  delete (avatar as Record<string, unknown>)['cameraHeight'];
+  delete (avatar as Record<string, unknown>)['cameraDistance'];
+  if (avatar.framing !== 'full' && avatar.framing !== 'upper' && avatar.framing !== 'face') {
+    avatar.framing = base.avatar.framing;
+  }
+
   return {
     gemini: { ...base.gemini, ...(s.gemini ?? {}) },
     voice: { ...base.voice, ...(s.voice ?? {}) },
-    avatar: { ...base.avatar, ...(s.avatar ?? {}) },
+    avatar,
   };
 }

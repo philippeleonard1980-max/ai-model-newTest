@@ -756,40 +756,37 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
       <hr />
 
       <h2>Framing</h2>
-      <div className="grid-2">
-        <div className="field">
-          <label htmlFor="cam-height">Camera height — {settings.avatar.cameraHeight.toFixed(2)}</label>
-          <input
-            id="cam-height"
-            type="range"
-            min={0.4}
-            max={1.8}
-            step={0.01}
-            value={settings.avatar.cameraHeight}
-            onChange={(event) => void patch({ cameraHeight: Number(event.target.value) })}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="cam-distance">Distance — {settings.avatar.cameraDistance.toFixed(2)}</label>
-          <input
-            id="cam-distance"
-            type="range"
-            min={0.6}
-            max={4}
-            step={0.05}
-            value={settings.avatar.cameraDistance}
-            onChange={(event) => void patch({ cameraDistance: Number(event.target.value) })}
-          />
-        </div>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={settings.avatar.lookAtCursor}
-            onChange={(event) => void patch({ lookAtCursor: event.target.checked })}
-          />
-          Follow the mouse cursor with her eyes and head
-        </label>
+      <p className="lead">
+        The camera measures whichever avatar is loaded, so these work the same for a tall model and
+        a chibi one. On the companion screen you can drag to turn her, scroll to zoom and right-drag
+        to slide the shot up or down; <strong>Reset view</strong> comes back here.
+      </p>
+      <div className="row">
+        {(
+          [
+            ['face', 'Face'],
+            ['upper', 'Upper body'],
+            ['full', 'Full body'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={settings.avatar.framing === value ? 'primary' : 'ghost'}
+            onClick={() => void patch({ framing: value })}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={settings.avatar.lookAtCursor}
+          onChange={(event) => void patch({ lookAtCursor: event.target.checked })}
+        />
+        Follow the mouse cursor with her eyes and head
+      </label>
 
       <p className="muted small">
         {assets?.animations.length ?? 0} animation clips installed:{' '}

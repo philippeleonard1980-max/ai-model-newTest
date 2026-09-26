@@ -40,6 +40,7 @@ window.renderVrm = async (opts) => {
   const vrm = gltf.userData.vrm;
   if (!vrm) throw new Error('no VRM in file');
   VRMUtils.rotateVRM0(vrm);
+  if (opts.combine) VRMUtils.combineSkeletons(vrm.scene);
   vrm.scene.traverse((o) => { o.frustumCulled = false; });
   scene.add(vrm.scene);
 
@@ -75,7 +76,7 @@ window.renderVrm = async (opts) => {
 
   renderer.render(scene, camera);
   window.__status = 'done';
-  return { size: size.toArray(), meta: vrm.meta?.name ?? vrm.meta?.title ?? null };
+  return { size: size.toArray(), centre: center.toArray(), min: box.min.toArray(), max: box.max.toArray(), meta: vrm.meta?.name ?? vrm.meta?.title ?? null };
 };
 window.__status = 'ready';
 </script></body></html>

@@ -59,8 +59,7 @@ export function CompanionScreen({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const stage = new VrmStage(canvas, {
-      cameraHeight: settings.avatar.cameraHeight,
-      cameraDistance: settings.avatar.cameraDistance,
+      framing: settings.avatar.framing,
       lookAtCursor: settings.avatar.lookAtCursor,
     });
     stageRef.current = stage;
@@ -76,11 +75,10 @@ export function CompanionScreen({
 
   useEffect(() => {
     stageRef.current?.setOptions({
-      cameraHeight: settings.avatar.cameraHeight,
-      cameraDistance: settings.avatar.cameraDistance,
+      framing: settings.avatar.framing,
       lookAtCursor: settings.avatar.lookAtCursor,
     });
-  }, [settings.avatar.cameraHeight, settings.avatar.cameraDistance, settings.avatar.lookAtCursor]);
+  }, [settings.avatar.framing, settings.avatar.lookAtCursor]);
 
   // Load (or reload) the avatar and its animation clips whenever the installed
   // assets change — for example right after the fox model finishes downloading.
@@ -256,6 +254,18 @@ export function CompanionScreen({
           {loadingModel && !stageError && <div className="stage-note">Summoning Rin…</div>}
           {stageError && <div className="stage-note error">{stageError}</div>}
         </div>
+        <div className="stage-controls">
+          <button
+            type="button"
+            className="stage-button"
+            title="Back to the default view"
+            onClick={() => stageRef.current?.resetView()}
+          >
+            Reset view
+          </button>
+          <span className="stage-hint">drag to turn · scroll to zoom · right-drag to slide</span>
+        </div>
+
         <div className="stage-badges">
           <span className={`mood mood-${emotion}`}>{emotion}</span>
           {assets?.usingFallback && (

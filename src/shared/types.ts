@@ -64,12 +64,17 @@ export interface VoiceSettings {
   volume: number;
 }
 
+/** How much of the avatar fills the view. */
+export type Framing = 'full' | 'upper' | 'face';
+
 export interface AvatarSettings {
   /** Absolute path to the active .vrm file, or null to use the bundled default. */
   modelPath: string | null;
-  /** Vertical framing offset applied to the camera target. */
-  cameraHeight: number;
-  cameraDistance: number;
+  /**
+   * Which shot to frame. The camera works this out from the model's own
+   * measurements, so it is correct for any avatar rather than one fixed size.
+   */
+  framing: Framing;
   /** Follow the mouse cursor with head and eyes. */
   lookAtCursor: boolean;
 }
