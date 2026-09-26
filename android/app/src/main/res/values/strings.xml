@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kitsune Companion</string>
+    <string name="title_activity_main">Kitsune Companion</string>
+    <string name="package_name">dev.kitsune.companion</string>
+    <string name="custom_url_scheme">dev.kitsune.companion</string>
+</resources>

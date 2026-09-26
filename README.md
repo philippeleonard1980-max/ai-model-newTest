@@ -1,6 +1,6 @@
 # Kitsune Companion
 
-A Windows desktop assistant with a 3D fox-girl character. She listens, answers
+A Windows desktop **and Android** assistant with a 3D fox-girl character. She listens, answers
 out loud and in text, and keeps a Markdown memory file you can read and edit.
 
 Her name is **Rin**. She is a seven-tailed kitsune who has decided your computer
@@ -37,8 +37,9 @@ is her territory, and she is touchy about the missing two tails.
 
 ## Requirements
 
-- Windows 10 or 11 (x64)
-- Node.js 20+ to build from source
+- **Desktop:** Windows 10 or 11 (x64)
+- **Android:** Android 7.0 (API 24) or newer, with Google Play services
+- Node.js 20+ to build either from source
 - A Google account
 
 ---
@@ -83,6 +84,24 @@ Both are OAuth-only in this app. Neither uses an API key.
 
 ---
 
+## Android
+
+There is an Android build of the same app — same React tree, same 3D stage, same
+persona and memory format, in a Capacitor shell instead of Electron. Sign-in
+necessarily differs (Google closed the desktop-style redirect to Android apps),
+so it uses Play Services' Authorization API: still your Google account, still no
+API key.
+
+```sh
+npm run sync:android     # build the web bundle and copy it into android/
+npm run open:android     # open in Android Studio, then Run
+```
+
+**[docs/ANDROID.md](docs/ANDROID.md)** has the full setup, including the one
+required step — registering an Android OAuth client with your signing
+certificate's SHA-1 — and an honest account of what could not be verified (no
+APK was built here; the Android SDK host is blocked in this environment).
+
 ## Install and run
 
 ```sh
@@ -91,6 +110,9 @@ npm run dev        # run in development
 npm run build      # typecheck + bundle
 npm run test       # unit tests
 npm run package:win  # build the Windows installer into release/
+
+npm run build:mobile # Android web bundle
+npm run sync:android # copy it into the Android project
 ```
 
 `npm run package:win` produces an NSIS installer,
@@ -180,7 +202,8 @@ humanoid rig it finds, so nothing else needs changing.
 expression, held for about seven seconds before easing back to idle:
 
 `neutral → idle`, `happy → clapping`, `thinking`, `surprised`, `sad`, `angry`,
-`sleepy`, `blush`, `proud → relax`, `playful → jump`, `farewell → goodbye`.
+`sleepy`, `blush`, `proud → relax`, `playful → jump`, `curious → look around`,
+`farewell → goodbye`.
 
 On top of the clips, the renderer adds randomised blinking, cursor-following
 gaze, and viseme-driven mouth movement synchronised to the speech synthesiser.
@@ -220,18 +243,23 @@ content-security policy allows `self` and the private asset scheme only.
 
 ```
 src/
+  core/            platform-neutral logic shared by both builds
+    gemini.ts      request/tool loop, dependencies injected
+    memory-doc.ts  pure Markdown editing for the memory file
+    prompt.ts      system instruction, mood parsing, speech flattening
   main/            Electron main process
     auth/          Google OAuth (PKCE loopback), encrypted token storage
     ai/            Gemini client, prompt assembly, mood parsing
     assets/        avatar catalog, downloader, path resolution
     store/         settings, personality and memory files
     ipc.ts         typed IPC surface, every call returns a Result
-  preload/         contextBridge API
-  renderer/        React UI
+  preload/         contextBridge API (desktop side of the platform contract)
+  mobile/          Capacitor side of the same contract, for Android
+  renderer/        React UI, shared verbatim by both shells
     vrm/           three.js + VRM stage, animation director, lip sync
     voice/         speech synthesis, push-to-talk recorder
     screens/       the two screens
-  shared/          types and channel names used by both sides
+  shared/          api.ts (the platform contract), types, channel names
 resources/         default personality, default memory, model catalog
 scripts/           asset installer
 test/              unit tests
