@@ -87,6 +87,7 @@ export const EMOTIONS = [
   'blush',
   'proud',
   'playful',
+  'curious',
   'farewell',
 ] as const;
 

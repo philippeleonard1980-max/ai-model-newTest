@@ -178,6 +178,18 @@ describe('model catalog', () => {
     }
   });
 
+  it('ships no animation clip that no emotion can reach', () => {
+    // The converse of the check above: a downloaded clip nothing maps to is a
+    // wasted fetch on every install. `curious` was exactly that.
+    const stage = readFileSync('src/renderer/vrm/VrmStage.ts', 'utf8');
+    const referenced = new Set([...stage.matchAll(/clip:\s*'([a-z]+)'/g)].map((m) => m[1]!));
+    for (const clip of catalog.animationPack.clips) {
+      expect(referenced.has(clip.name), `clip "${clip.name}" is downloaded but never played`).toBe(
+        true,
+      );
+    }
+  });
+
   it('serves every animation over https', () => {
     for (const clip of catalog.animationPack.clips) {
       expect(clip.url).toMatch(/^https:\/\//);

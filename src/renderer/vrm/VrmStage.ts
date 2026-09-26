@@ -24,6 +24,7 @@ const EMOTION_MAP: Record<Emotion, { clip: string; expression?: string; weight: 
   blush: { clip: 'blush', expression: 'happy', weight: 0.5 },
   proud: { clip: 'proud', expression: 'happy', weight: 0.6 },
   playful: { clip: 'playful', expression: 'happy', weight: 0.7 },
+  curious: { clip: 'curious', expression: 'neutral', weight: 0.35 },
   farewell: { clip: 'farewell', expression: 'relaxed', weight: 0.5 },
 };
 
