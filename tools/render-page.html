@@ -1,0 +1,81 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+ html,body{margin:0;background:#14100e;overflow:hidden}
+ canvas{display:block}
+</style></head><body>
+<script type="importmap">
+{"imports":{
+  "three":"/node_modules/three/build/three.module.js",
+  "three/":"/node_modules/three/",
+  "@pixiv/three-vrm":"/node_modules/@pixiv/three-vrm/lib/three-vrm.module.js",
+  "@pixiv/three-vrm-animation":"/node_modules/@pixiv/three-vrm-animation/lib/three-vrm-animation.module.js"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
+
+window.__status = 'starting';
+window.renderVrm = async (opts) => {
+  const { modelUrl, animUrl, width, height, view, frameTime } = opts;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+  renderer.setSize(width, height, false);
+  renderer.setClearColor(0x14100e, 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.body.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const key = new THREE.DirectionalLight(0xfff3e4, 2.1); key.position.set(1.4, 2.0, 1.8); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffa76b, 1.1); rim.position.set(-1.8, 1.4, -1.6); scene.add(rim);
+  const fill = new THREE.DirectionalLight(0x9ad0ff, 0.5); fill.position.set(-1.2, 0.4, 1.6); scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+
+  const loader = new GLTFLoader();
+  loader.register((p) => new VRMLoaderPlugin(p));
+  loader.register((p) => new VRMAnimationLoaderPlugin(p));
+
+  const gltf = await loader.loadAsync(modelUrl);
+  const vrm = gltf.userData.vrm;
+  if (!vrm) throw new Error('no VRM in file');
+  VRMUtils.rotateVRM0(vrm);
+  vrm.scene.traverse((o) => { o.frustumCulled = false; });
+  scene.add(vrm.scene);
+
+  let mixer = null;
+  if (animUrl) {
+    const ag = await loader.loadAsync(animUrl);
+    const anim = ag.userData.vrmAnimations?.[0];
+    if (anim) {
+      mixer = new THREE.AnimationMixer(vrm.scene);
+      mixer.clipAction(createVRMAnimationClip(anim, vrm)).play();
+    }
+  }
+
+  // Frame the model from its real bounding box so any avatar fills the shot.
+  vrm.update(0);
+  if (mixer) { mixer.update(frameTime ?? 0); vrm.update(frameTime ?? 0); }
+  const box = new THREE.Box3().setFromObject(vrm.scene);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const camera = new THREE.PerspectiveCamera(30, width / height, 0.05, 100);
+
+  let target, dist;
+  if (view === 'head') {
+    target = new THREE.Vector3(center.x, box.max.y - size.y * 0.11, center.z);
+    dist = size.y * 0.62;
+  } else {
+    target = new THREE.Vector3(center.x, center.y, center.z);
+    dist = (size.y / (2 * Math.tan((camera.fov * Math.PI) / 360))) * 1.18;
+  }
+  const yaw = (opts.yaw ?? 0) * Math.PI / 180;
+  camera.position.set(target.x + Math.sin(yaw) * dist, target.y, target.z + Math.cos(yaw) * dist);
+  camera.lookAt(target);
+
+  renderer.render(scene, camera);
+  window.__status = 'done';
+  return { size: size.toArray(), meta: vrm.meta?.name ?? vrm.meta?.title ?? null };
+};
+window.__status = 'ready';
+</script></body></html>

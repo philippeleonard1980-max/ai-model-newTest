@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "package:win": "npm run build && electron-builder --win --publish never",
-    "package:dir": "npm run build && electron-builder --dir --publish never"
+    "package:dir": "npm run build && electron-builder --dir --publish never",
+    "render": "node tools/render.mjs"
   },
   "dependencies": {
     "marked": "^18.0.14"

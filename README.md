@@ -119,22 +119,41 @@ three.js. Animation clips are VRM Animation (`.vrma`) files retargeted onto
 whichever avatar is loaded, so swapping the character keeps every animation
 working.
 
-### If the fox does not download
+### Verifying an avatar
+
+`tools/render.mjs` loads a `.vrm` in headless Chromium through the same
+three.js + `@pixiv/three-vrm` stack the app uses and writes a PNG. See
+`tools/README.md`. The images in `docs/preview/` came from it, and they are how
+the animation retargeting was checked: the avatar's bounding box narrows from
+1.06 m wide in the T-pose to ~0.42 m once a VRMA clip is applied, which is the
+arms coming down.
+
+| T-pose (no clip) | `thinking.vrma` | `farewell.vrma` |
+|---|---|---|
+| ![](docs/preview/model-tpose.png) | ![](docs/preview/pose-thinking.png) | ![](docs/preview/pose-farewell.png) |
+
+### If the fox avatar is missing
 
 The fox avatars are hosted on Arweave. On a restricted network those mirrors may
 be unreachable, in which case the installer falls back to the CC0 VRoid sample
 so the app always starts with a working character, and the Companion screen
 shows a **stand-in avatar** badge.
 
-To fix it later, open **Personality & Memory → Avatar** and press **Install &
-use** on Megan the Fox, or point the app at any `.vrm` file you already have.
+To fix it, open **Personality & Memory → Avatar** and press **Install & use** on
+Megan the Fox, or point the app at any `.vrm` file you already have.
 
-> This is exactly what happened in the environment this project was built in:
-> Arweave and every IPFS gateway were blocked by the network policy, so the
-> animation pack and the fallback avatar were verified end to end but the fox
-> download itself could not be exercised. The download path is otherwise
-> ordinary — mirrors in order, magic-byte validation, atomic rename — and the
-> in-app installer uses the same code.
+> **Why the fox is not committed to this repository.** The environment this was
+> built in routes all outbound traffic through an allowlisting proxy, which
+> denies `arweave.net`, every IPFS gateway, `booth.pm`, `hub.vroid.com`,
+> `itch.io` and Hugging Face. Only GitHub, GitLab and the npm registry are
+> reachable, and every redistributable fox-girl VRM that could be found lives
+> behind one of the blocked hosts. Twelve CC0/MIT avatars that *are* reachable
+> were downloaded and rendered to check — none of them is a fox.
+>
+> So the animation pack and the fallback avatar are verified end to end, and the
+> fox download is the one path that could not be exercised here. The code around
+> it is ordinary: mirrors tried in order, glTF magic-byte validation, atomic
+> rename, and the in-app installer shares it.
 
 ### Animations
 
