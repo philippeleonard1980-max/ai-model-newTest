@@ -12,13 +12,14 @@
  * source. Nothing here is generated or modelled by the app — the avatar is an
  * existing CC0 model that gets installed.
  *
- * The script is resilient by design. The animation pack and the fallback
- * avatar come from GitHub; the fox avatars come from Arweave mirrors. If the
- * fox download fails on a restricted network, the fallback still lands and the
- * app runs — you can install the fox later from the Settings screen.
+ * The script is resilient by design. The default fox is committed to the
+ * repository and is simply copied, so it lands with no network at all; the rest
+ * of the catalog is downloaded, and the animation pack comes from GitHub. If a
+ * download fails on a restricted network the fallback avatar still lands and
+ * the app runs — you can install the others later from the Settings screen.
  */
 
-import { mkdir, writeFile, stat, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, stat, readFile, copyFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,6 +75,25 @@ async function download(url, destination, { expectGltf = true } = {}) {
   }
 }
 
+/**
+ * An avatar committed to the repository needs no network at all, which is what
+ * makes the default character survive an offline install or a proxy that denies
+ * the hosts every published VRM lives on.
+ */
+async function installBundled(label, source, destination) {
+  if (!force && existsSync(destination)) {
+    const { size } = await stat(destination);
+    console.log(`  = ${label} already present (${human(size)})`);
+    return { ok: true, skipped: true };
+  }
+  const buffer = await readFile(source);
+  if (!looksLikeGltf(buffer)) throw new Error(`${source} is not a glTF/VRM file`);
+  await mkdir(dirname(destination), { recursive: true });
+  await copyFile(source, destination);
+  console.log(`  . ${label} <- bundled in the repository ... ok (${human(buffer.length)})`);
+  return { ok: true };
+}
+
 async function fetchWithMirrors(label, mirrors, destination) {
   if (!force && existsSync(destination)) {
     const { size } = await stat(destination);
@@ -119,7 +139,10 @@ async function main() {
 
   let installedFox = null;
   for (const fox of foxOrder) {
-    const result = await fetchWithMirrors(`${fox.name}`, fox.mirrors, join(modelsDir, fox.file));
+    const destination = join(modelsDir, fox.file);
+    const result = fox.bundled
+      ? await installBundled(fox.name, join(root, fox.bundled), destination)
+      : await fetchWithMirrors(`${fox.name}`, fox.mirrors, destination);
     if (result.ok) {
       installedFox = fox;
       break;

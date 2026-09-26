@@ -136,14 +136,14 @@ installer itself must be done on Windows (or under Wine).
 ## The 3D character
 
 The avatar is an **existing model that gets installed, not generated**. Assets
-live in `assets/` and are downloaded by `scripts/fetch-assets.mjs`, which runs
-automatically after `npm install`. They are not committed — the avatars run to
-tens of megabytes, and the sources are public-domain downloads rather than
-project source.
+land in `assets/` via `scripts/fetch-assets.mjs`, which runs automatically after
+`npm install`: the default character is copied out of the repository, everything
+else is downloaded.
 
 | Asset | Source | Licence |
 |---|---|---|
-| **Anna** — kitsune girl (default) | Polygonal Mind, 100 Avatars R3 #270 | CC0-1.0 |
+| **Shibahu** — fox girl (default) | Supplied by the repository owner, `anime-fox-girl/` on `main` | check with the owner |
+| **Anna** — kitsune girl | Polygonal Mind, 100 Avatars R3 #270 | CC0-1.0 |
 | **Megan the Fox** | Polygonal Mind, 100 Avatars R3 #278 | CC0-1.0 |
 | **響狐リク / Hibiki Fox Riku** (VTuber) | Original VRoid character, [Booth](https://booth.pm/en/items/1148939) | check source page |
 | **Two-Tails** | Polygonal Mind, 100 Avatars R3 #284 | CC0-1.0 |
@@ -151,18 +151,31 @@ project source.
 | `idle.vrma` | pixiv ChatVRM | MIT |
 | 11 expression clips | `tk256ailab/vrm-viewer` | MIT |
 
-The foxes sit on independent hosts and are tried in order, so a network that
-blocks one may still reach another. Where a licence could not be read from a
-machine-readable source, the app labels the entry **licence unverified** and
-links to the author's page rather than asserting terms on their behalf.
+Shibahu is **committed to this repository** at
+`resources/avatars/shibahu-fox-girl.vrm`, so `npm install` copies her into place
+with no network at all. The rest are downloaded from independent hosts and tried
+in order. Where a licence could not be read from a machine-readable source, the
+app labels the entry **licence unverified** and links to the source rather than
+asserting terms on anyone's behalf.
 
 ### Rin
 
 ![](docs/preview/fox-head.png)
 
-Anna is an anime fox girl: white-and-red fox ears, a kitsune-mask marking
-across half her face, pink hair tied up with a kanzashi pin and bell charms.
-She is CC0, so she ships as the default with nothing to agree to.
+Mint-green hair, gold slit-pupil eyes, bell-tipped fox ears and a tail.
+
+She arrived as a Blender file, not a VRM — a 210-bone rig with no humanoid map,
+which `@pixiv/three-vrm` cannot retarget anything onto. `tools/blend-export.py`
+and `tools/glb-to-vrm.mjs` convert her: 52 humanoid bones mapped, and her
+seventeen unnamed facial morphs identified by rendering each one and bound to
+the VRM expression names the stage drives.
+
+![](docs/preview/expressions.png)
+
+*neutral · blink · `aa` · happy — then angry · surprised · sad.*
+
+So she blinks, lip-syncs while speaking and changes face with her mood, the same
+as a purpose-built VRM would.
 
 Rendering is [`@pixiv/three-vrm`](https://github.com/pixiv/three-vrm) on
 three.js. Animation clips are VRM Animation (`.vrma`) files retargeted onto
@@ -181,19 +194,19 @@ that the animation clips retarget onto it.
 |---|---|---|
 | ![](docs/preview/model-tpose.png) | ![](docs/preview/pose-thinking.png) | ![](docs/preview/pose-farewell.png) |
 
-Anna's bounding box narrows from 1.27 m wide in the T-pose to 0.39–0.75 m once
-a VRMA clip is applied, which is the arms coming down — the retargeting works
-on her exactly as it does on the fallback.
+
 
 ### If the fox avatar is missing
 
-`npm install` installs Anna from GitHub. If that is unreachable, the installer
-tries the remaining foxes (whose mirrors are on Arweave), and finally falls back
-to the CC0 VRoid sample so the app always starts with a working character — the
-Companion screen then shows a **stand-in avatar** badge.
+It should not be: the default is committed to the repository and copied into
+place, so it needs no network. If `assets/models/` is empty, run `npm run
+assets` and read what it prints.
 
-To fix it, open **Personality & Memory → Avatar** and press **Install & use** on
-any of the foxes, or point the app at a `.vrm` file you already have.
+Should even that fail, the installer works down the rest of the catalog and
+finally to the CC0 VRoid sample, so the app always starts with a working
+character — the Companion screen then shows a **stand-in avatar** badge. Open
+**Personality & Memory → Avatar** to install another fox, or point the app at
+any `.vrm` on your machine.
 
 > **A note on how the fox was sourced.** The environment this was built in
 > routes outbound traffic through an allowlisting proxy that denies

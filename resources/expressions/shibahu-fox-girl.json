@@ -1,0 +1,14 @@
+{
+  "_note": "Morph-target indices for the Shibahu rig, read off renders of each target in turn (tools/glb-to-vrm.mjs --expressions). The rig ships unnamed targets, so these were identified by eye, not by metadata.",
+  "blink":     8,
+  "happy":     0,
+  "sad":       1,
+  "angry":     2,
+  "relaxed":   6,
+  "surprised": 9,
+  "aa":        { "index": 12, "weight": 1.0 },
+  "oh":        { "index": 9,  "weight": 0.7 },
+  "ih":        { "index": 5,  "weight": 0.6 },
+  "ee":        { "index": 5,  "weight": 0.4 },
+  "ou":        { "index": 12, "weight": 0.8 }
+}

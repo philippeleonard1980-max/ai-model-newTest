@@ -1,14 +1,31 @@
 {
   "note": "Avatars Kitsune Companion can install. 'mirrors' are tried in order. 'licenseVerified' is true only where the licence was read from a machine-readable source (the CC0 registry entry or the VRM's own metadata); where it is false, the app shows the source page so you can check the terms yourself before using the model.",
   "foxPreferenceOrder": [
+    "shibahu-fox-girl",
     "anna-kitsune",
     "megan-the-fox",
     "hibiki-fox-riku",
     "two-tails"
   ],
-  "defaultModelId": "anna-kitsune",
+  "defaultModelId": "shibahu-fox-girl",
   "fallbackModelId": "vroid-sample-girl",
   "models": [
+    {
+      "id": "shibahu-fox-girl",
+      "name": "Shibahu — fox girl",
+      "description": "An anime fox girl with mint-green hair, gold slit-pupil eyes, bell-tipped fox ears and a tail, in a bomber jacket. Rigged with a full humanoid skeleton and 17 facial morphs, so she blinks, lip-syncs and takes every mood animation. Supplied by the repository owner and bundled with the app.",
+      "license": "Supplied by the repository owner",
+      "licenseVerified": false,
+      "credit": "Uploaded to this repository as anime-fox-girl/ on the default branch; converted to VRM by tools/glb-to-vrm.mjs",
+      "sourceUrl": "https://github.com/philippeleonard1980-max/ai-model-newTest/tree/main/anime-fox-girl",
+      "fox": true,
+      "file": "shibahu-fox-girl.vrm",
+      "approxBytes": 13390000,
+      "bundled": "resources/avatars/shibahu-fox-girl.vrm",
+      "mirrors": [
+        "https://raw.githubusercontent.com/philippeleonard1980-max/ai-model-newTest/claude/fox-ai-assistant-app-ms51e2/resources/avatars/shibahu-fox-girl.vrm"
+      ]
+    },
     {
       "id": "anna-kitsune",
       "name": "Anna — kitsune girl",

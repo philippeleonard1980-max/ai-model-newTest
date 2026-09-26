@@ -10,6 +10,14 @@
  * Maya/FBX naming, and writes a file the stage loads like any other avatar.
  *
  *   node tools/glb-to-vrm.mjs in.glb out.vrm [--scale 0.01] [--name "…"]
+ *                              [--expressions expressions.json]
+ *
+ * `--expressions` maps VRM expression names onto the rig's morph targets, which
+ * is what gives the avatar blinking, lip sync and per-mood faces. Imported rigs
+ * usually name their morphs `target_0…target_n`, so the mapping has to be found
+ * by looking: render each morph in turn and write down which is which. The file
+ * is `{"blink": 8, "aa": {"index": 12, "weight": 0.9}}` — see
+ * `resources/expressions/` for a worked example.
  *
  * `--scale` is for rigs authored in centimetres. Check the result with
  * `tools/render.mjs`: a human-sized avatar should come out around 1.5–1.8 m
@@ -93,6 +101,36 @@ const rootNode = gltf.nodes[root];
 if (scale !== 1) rootNode.scale = (rootNode.scale ?? [1, 1, 1]).map((v) => v * scale);
 rootNode.translation = [0, 0, 0];
 
+/**
+ * Bind VRM expression names to morph targets. Every mesh that carries morphs
+ * gets the same index bound, because an imported face is usually split across
+ * several meshes (skin, brows, mouth interior) that share one morph order.
+ */
+const preset = {};
+const expressionsFile = flag('expressions');
+if (expressionsFile) {
+  const morphNodes = gltf.nodes
+    .map((node, i) => ({ i, mesh: node.mesh }))
+    .filter(({ mesh }) => mesh !== undefined && (gltf.meshes[mesh].primitives ?? [])
+      .some((p) => (p.targets ?? []).length > 0));
+  if (morphNodes.length === 0) throw new Error('--expressions given but the rig has no morph targets');
+
+  for (const [name, value] of Object.entries(JSON.parse(readFileSync(expressionsFile, 'utf8')))) {
+    if (name.startsWith('_')) continue;   // a comment key, not an expression
+    const { index, weight = 1 } = typeof value === 'number' ? { index: value } : value;
+    const binds = morphNodes
+      .filter(({ mesh }) => (gltf.meshes[mesh].primitives ?? [])
+        .some((p) => (p.targets ?? []).length > index))
+      .map(({ i }) => ({ node: i, index, weight }));
+    if (binds.length === 0) {
+      console.warn(`  expression "${name}": no mesh has morph target ${index}, skipping`);
+      continue;
+    }
+    preset[name] = { morphTargetBinds: binds, isBinary: false, overrideBlink: 'none', overrideLookAt: 'none', overrideMouth: 'none' };
+  }
+  console.log(`bound ${Object.keys(preset).length} expressions across ${morphNodes.length} meshes`);
+}
+
 gltf.extensionsUsed = [...new Set([...(gltf.extensionsUsed ?? []), 'VRMC_vrm'])];
 gltf.extensions = {
   ...(gltf.extensions ?? {}),
@@ -119,7 +157,7 @@ gltf.extensions = {
     humanoid: { humanBones },
     firstPerson: { meshAnnotations: [] },
     lookAt: { type: 'bone' },
-    expressions: { preset: {} },
+    expressions: { preset },
   },
 };
 
