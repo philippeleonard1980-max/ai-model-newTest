@@ -71,6 +71,20 @@ export function App(): JSX.Element {
     })();
   }, []);
 
+  // Windows enumerates SAPI voices asynchronously, and on a slow start the
+  // initial wait can time out before any arrive. Keep listening for the rest of
+  // the session rather than leaving the picker empty until the app restarts.
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    const onVoicesChanged = (): void => {
+      const available = synth.getVoices();
+      if (available.length > 0) setVoices(available);
+    };
+    synth.addEventListener('voiceschanged', onVoicesChanged);
+    return () => synth.removeEventListener('voiceschanged', onVoicesChanged);
+  }, []);
+
   // Stop the voice when the window goes away, so she is not left talking to
   // an empty desktop.
   useEffect(() => {
