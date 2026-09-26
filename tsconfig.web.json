@@ -23,9 +23,11 @@
   },
   "include": [
     "src/renderer/**/*.ts",
+    "src/mobile/**/*.ts",
+    "src/mobile/**/*.tsx",
     "src/renderer/**/*.tsx",
     "src/shared/**/*.ts",
     "src/core/**/*.ts",
-    "src/preload/api.d.ts"
+    "src/preload/**/*.ts"
   ]
 }

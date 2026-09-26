@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@shared/ipc';
+import type { KitsuneApi, ModelOption } from '@shared/api';
 import type {
   AppSettings,
   AssetStatus,
@@ -46,7 +47,7 @@ const api = {
     send: (text: string, history: ChatMessage[]) => call<ChatReply>(IPC.chatSend, text, history),
     transcribe: (audio: ArrayBuffer, mimeType: string) =>
       call<string>(IPC.chatTranscribe, audio, mimeType),
-    models: () => call<Array<{ id: string; label: string }>>(IPC.chatModels),
+    models: () => call<ModelOption[]>(IPC.chatModels),
   },
   assets: {
     status: () => call<AssetStatus>(IPC.assetsStatus),
@@ -65,8 +66,6 @@ const api = {
     openPath: (path: string) => call<void>(IPC.shellOpenPath, path),
     openExternal: (url: string) => call<void>(IPC.shellOpenExternal, url),
   },
-} as const;
-
-export type KitsuneApi = typeof api;
+} satisfies KitsuneApi;
 
 contextBridge.exposeInMainWorld('kitsune', api);

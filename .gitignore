@@ -6,3 +6,10 @@ release/
 *.log
 .DS_Store
 node_modules/.tmp/
+dist-mobile/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/res/xml/config.xml
