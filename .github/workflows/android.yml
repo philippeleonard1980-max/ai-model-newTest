@@ -52,7 +52,10 @@ jobs:
           [ -x "$sdkmanager" ] || sdkmanager=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -name sdkmanager -type f | head -1)
           compile=$(grep -oP 'compileSdkVersion\s*=\s*\K\d+' android/variables.gradle)
           echo "compileSdk is $compile"
-          yes | "$sdkmanager" --licenses > /dev/null
+          # `yes |` dies of SIGPIPE the moment sdkmanager stops reading, which
+          # under pipefail fails the step even though the licences were
+          # accepted. A fixed number of y's needs no pipe to break.
+          printf 'y\n%.0s' $(seq 30) | "$sdkmanager" --licenses > /dev/null
           "$sdkmanager" "platforms;android-$compile" "build-tools;$compile.0.0"
 
       - uses: gradle/actions/setup-gradle@v4
