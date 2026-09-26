@@ -25,6 +25,7 @@
     "src/renderer/**/*.ts",
     "src/renderer/**/*.tsx",
     "src/shared/**/*.ts",
+    "src/core/**/*.ts",
     "src/preload/api.d.ts"
   ]
 }

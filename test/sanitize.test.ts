@@ -51,6 +51,22 @@ describe('sanitizeHtml — nested content', () => {
     assertInert(sanitizeHtml('<p><img src=x onerror=alert(1)></p>'));
   });
 
+  it('drops foreign-namespace script and style too, not just HTML ones', () => {
+    // Inside <svg>/<math> the parser keeps the source casing, so tagName reads
+    // "script" rather than "SCRIPT" and an uppercase-only check misses it.
+    for (const html of [
+      '<svg><script>SECRET()</script></svg>',
+      '<svg><style>SECRET{}</style></svg>',
+      '<math><mtext><script>SECRET()</script></mtext></math>',
+    ]) {
+      const out = sanitizeHtml(html);
+      assertInert(out);
+      const host = document.createElement('div');
+      host.innerHTML = out;
+      expect(host.textContent).not.toContain('SECRET');
+    }
+  });
+
   it('drops script and style contents instead of exposing them as text', () => {
     expect(sanitizeHtml('<div><script>alert(1)</script></div>')).not.toContain('alert');
     expect(sanitizeHtml('<style>body{display:none}</style>')).not.toContain('display');

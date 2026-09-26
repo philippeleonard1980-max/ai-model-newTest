@@ -39,7 +39,7 @@ function stripAttributes(element: Element): void {
       name === 'href' && (value.startsWith('https://') || value.startsWith('http://'));
     if (!isSafeHref) element.removeAttribute(attribute.name);
   }
-  if (element.tagName === 'A') {
+  if (element.localName.toLowerCase() === 'a') {
     element.setAttribute('target', '_blank');
     element.setAttribute('rel', 'noreferrer noopener');
   }
@@ -51,17 +51,21 @@ export function sanitizeHtml(html: string, doc: Document = document): string {
 
   const walk = (node: ParentNode): void => {
     for (const child of [...node.children]) {
+      // `tagName` is uppercased only for HTML-namespace elements; inside <svg>
+      // or <math> it keeps the source casing, so `<svg><script>` arrives as
+      // "script" and would miss both sets. localName normalises that.
+      const tag = child.localName.toUpperCase();
       // Depth first: clean the subtree *before* deciding what to do with the
       // element itself, so anything hoisted by an unwrap is already sanitised.
       // Cleaning afterwards would let one disallowed wrapper smuggle its
       // children past the filter entirely.
       walk(child);
 
-      if (DROPPED_TAGS.has(child.tagName)) {
+      if (DROPPED_TAGS.has(tag)) {
         child.remove();
         continue;
       }
-      if (!ALLOWED_TAGS.has(child.tagName)) {
+      if (!ALLOWED_TAGS.has(tag)) {
         child.replaceWith(...child.childNodes);
         continue;
       }
