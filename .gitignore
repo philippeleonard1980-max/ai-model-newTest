@@ -1,7 +1,7 @@
 node_modules/
 out/
 release/
-assets/
+/assets/
 .vite/
 *.log
 .DS_Store

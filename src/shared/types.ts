@@ -153,7 +153,17 @@ export interface CatalogEntry {
   name: string;
   description: string;
   license: string;
+  /**
+   * True only where the licence came from a machine-readable source. Where it
+   * is false the UI points at `sourceUrl` instead of asserting terms we have
+   * not actually read.
+   */
+  licenseVerified: boolean;
   credit: string;
+  /** Page describing the model and its terms. */
+  sourceUrl: string;
+  /** Whether this avatar is a fox, which is what Rin is written to be. */
+  fox: boolean;
   url: string;
   /** Approximate download size in bytes, for progress display. */
   approxBytes?: number;

@@ -98,9 +98,18 @@ describe('emotion vocabulary', () => {
 
 describe('model catalog', () => {
   const catalog = JSON.parse(readFileSync('resources/model-catalog.json', 'utf8')) as {
+    foxPreferenceOrder: string[];
     defaultModelId: string;
     fallbackModelId: string;
-    models: Array<{ id: string; file: string; mirrors: string[]; fox: boolean; license: string }>;
+    models: Array<{
+      id: string;
+      file: string;
+      mirrors: string[];
+      fox: boolean;
+      license: string;
+      licenseVerified: boolean;
+      sourceUrl: string;
+    }>;
     animationPack: { clips: Array<{ name: string; file: string; url: string }> };
   };
 
@@ -114,14 +123,41 @@ describe('model catalog', () => {
     const preferred = catalog.models.find((m) => m.id === catalog.defaultModelId);
     const fallback = catalog.models.find((m) => m.id === catalog.fallbackModelId);
     expect(preferred?.fox).toBe(true);
+    expect(catalog.foxPreferenceOrder[0]).toBe(catalog.defaultModelId);
     expect(fallback?.mirrors[0]).toMatch(/^https:\/\/raw\.githubusercontent\.com\//);
   });
 
-  it('gives every model a redistributable licence and at least one mirror', () => {
+  it('gives every model at least one https mirror and a source page', () => {
     for (const model of catalog.models) {
-      expect(model.license).toMatch(/^CC0/);
       expect(model.mirrors.length).toBeGreaterThan(0);
       for (const mirror of model.mirrors) expect(mirror).toMatch(/^https:\/\//);
+      expect(model.sourceUrl).toMatch(/^https:\/\//);
+    }
+  });
+
+  it('only claims a verified licence where that licence is a real identifier', () => {
+    for (const model of catalog.models) {
+      if (model.licenseVerified) expect(model.license).toMatch(/^CC0/);
+      // An unverified entry must not assert terms it has not read.
+      else expect(model.license).not.toMatch(/^CC0/);
+    }
+  });
+
+  it('spreads the foxes across independent hosts so one block is survivable', () => {
+    const hosts = new Set(
+      catalog.models
+        .filter((model) => model.fox)
+        .flatMap((model) => model.mirrors.map((m) => new URL(m).host)),
+    );
+    expect(hosts.size).toBeGreaterThan(1);
+  });
+
+  it('lists only real foxes in the fox preference order', () => {
+    expect(catalog.foxPreferenceOrder.length).toBeGreaterThan(0);
+    for (const id of catalog.foxPreferenceOrder) {
+      const entry = catalog.models.find((model) => model.id === id);
+      expect(entry, `foxPreferenceOrder names unknown model "${id}"`).toBeDefined();
+      expect(entry?.fox).toBe(true);
     }
   });
 

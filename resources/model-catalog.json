@@ -1,5 +1,6 @@
 {
-  "note": "Avatars Kitsune Companion can install. Everything here is CC0 (public domain), so it can be downloaded and redistributed freely. 'mirrors' are tried in order.",
+  "note": "Avatars Kitsune Companion can install. 'mirrors' are tried in order. 'licenseVerified' is true only where the licence was read from a machine-readable source (the CC0 registry entry or the VRM's own metadata); where it is false, the app shows the source page so you can check the terms yourself before using the model.",
+  "foxPreferenceOrder": ["megan-the-fox", "hibiki-fox-riku", "two-tails"],
   "defaultModelId": "megan-the-fox",
   "fallbackModelId": "vroid-sample-girl",
   "models": [
@@ -8,7 +9,9 @@
       "name": "Megan the Fox",
       "description": "A fox-girl avatar with ears and tail. Avatar 278 of the 100 Avatars R3 collection. This is the default character for Rin.",
       "license": "CC0-1.0",
+      "licenseVerified": true,
       "credit": "Polygonal Mind — 100 Avatars R3 (public domain)",
+      "sourceUrl": "https://www.opensourceavatars.com/",
       "fox": true,
       "file": "megan-the-fox.vrm",
       "mirrors": [
@@ -18,11 +21,27 @@
       ]
     },
     {
+      "id": "hibiki-fox-riku",
+      "name": "響狐リク — Hibiki Fox Riku (VTuber)",
+      "description": "A VTuber-style fox girl built in VRoid Studio — 'a little fox who loves being a DJ'. An original character rather than a game one. Listed in the Lobe Vidol character market; check the Booth page for the author's terms before using her commercially.",
+      "license": "See source page",
+      "licenseVerified": false,
+      "credit": "Original VRoid character, catalogued by Lobe Vidol",
+      "sourceUrl": "https://booth.pm/en/items/1148939",
+      "fox": true,
+      "file": "hibiki-fox-riku.vrm",
+      "mirrors": [
+        "https://r2.vidol.chat/files/2024/10/30/274a20dd-86bf-48eb-b6ea-ab80e0ff7b47.vrm"
+      ]
+    },
+    {
       "id": "two-tails",
       "name": "Two-Tails",
       "description": "A twin-tailed kitsune avatar. Avatar 284 of the 100 Avatars R3 collection. A good alternative if you want more tails.",
       "license": "CC0-1.0",
+      "licenseVerified": true,
       "credit": "Polygonal Mind — 100 Avatars R3 (public domain)",
+      "sourceUrl": "https://www.opensourceavatars.com/",
       "fox": true,
       "file": "two-tails.vrm",
       "mirrors": [
@@ -36,7 +55,9 @@
       "name": "VRoid sample girl (offline fallback)",
       "description": "The public-domain VRoid Studio sample avatar. Not a fox, but it always downloads, so the app is never left without a working character.",
       "license": "CC0-1.0",
+      "licenseVerified": true,
       "credit": "pixiv VRoid Studio sample model (public domain)",
+      "sourceUrl": "https://vroid.pixiv.help/hc/en-us/articles/900000088126",
       "fox": false,
       "file": "vroid-sample-girl.vrm",
       "approxBytes": 18013268,

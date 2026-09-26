@@ -109,24 +109,26 @@ async function main() {
 
   console.log('\nAvatar');
   const byId = new Map(catalog.models.map((model) => [model.id, model]));
-  const preferred = byId.get(catalog.defaultModelId);
   const fallback = byId.get(catalog.fallbackModelId);
 
-  let installedFox = false;
-  if (preferred) {
-    const result = await fetchWithMirrors(
-      `${preferred.name} (fox)`,
-      preferred.mirrors,
-      join(modelsDir, preferred.file),
-    );
-    installedFox = result.ok;
-    if (!result.ok) {
-      console.log(`  ! Could not reach any mirror for ${preferred.name}.`);
+  // Try each fox in turn — they live on independent hosts, so a network that
+  // blocks one may still allow another.
+  const foxOrder = (catalog.foxPreferenceOrder ?? [catalog.defaultModelId])
+    .map((id) => byId.get(id))
+    .filter(Boolean);
+
+  let installedFox = null;
+  for (const fox of foxOrder) {
+    const result = await fetchWithMirrors(`${fox.name}`, fox.mirrors, join(modelsDir, fox.file));
+    if (result.ok) {
+      installedFox = fox;
+      break;
     }
+    console.log(`  ! No mirror reachable for ${fox.name}; trying the next fox.`);
   }
 
   let haveFallback = false;
-  if (fallback && fallback.id !== preferred?.id) {
+  if (fallback && fallback.id !== installedFox?.id) {
     const result = await fetchWithMirrors(
       `${fallback.name}`,
       fallback.mirrors,
@@ -137,7 +139,10 @@ async function main() {
 
   console.log('\nSummary');
   if (installedFox) {
-    console.log(`  Fox avatar installed: ${preferred.name} (${preferred.license}).`);
+    console.log(`  Fox avatar installed: ${installedFox.name} (${installedFox.license}).`);
+    if (installedFox.licenseVerified === false) {
+      console.log(`  Check the author's terms before commercial use: ${installedFox.sourceUrl}`);
+    }
   } else if (haveFallback) {
     console.log('  Fox avatar unavailable on this network; the fallback avatar was installed.');
     console.log('  Open Settings -> Avatar in the app to retry the fox download, or point it at any local .vrm.');

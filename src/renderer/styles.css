@@ -788,3 +788,8 @@ kbd {
 ::-webkit-scrollbar-thumb:hover {
   background: #4d3d34;
 }
+
+.pill.caution {
+  background: color-mix(in srgb, var(--warn) 20%, transparent);
+  color: var(--warn);
+}

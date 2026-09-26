@@ -548,12 +548,30 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
             <article key={entry.id} className={active ? 'model-card active' : 'model-card'}>
               <header>
                 <h3>{entry.name}</h3>
+                {entry.fox && <span className="pill">fox</span>}
                 {active && <span className="pill">in use</span>}
+                {!entry.licenseVerified && (
+                  <span className="pill caution" title="Licence not machine-readable — check the source page">
+                    licence unverified
+                  </span>
+                )}
               </header>
               <p>{entry.description}</p>
               <footer>
                 <span className="license">
                   {entry.license} — {entry.credit}
+                  {!entry.licenseVerified && (
+                    <>
+                      {' '}
+                      <button
+                        type="button"
+                        className="linkish"
+                        onClick={() => void window.kitsune.shell.openExternal(entry.sourceUrl)}
+                      >
+                        check the terms
+                      </button>
+                    </>
+                  )}
                 </span>
                 <button
                   type="button"
@@ -585,6 +603,12 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
           );
         })}
       </div>
+
+      <p className="muted small">
+        Want a different fox? VRoid Hub and Booth are full of VTuber-style kitsune avatars.
+        Download any <code>.vrm</code> in your browser and load it below — every animation
+        retargets onto it automatically.
+      </p>
 
       <div className="row">
         <button

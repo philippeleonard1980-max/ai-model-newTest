@@ -109,8 +109,14 @@ automatically after `npm install`. They are not committed — the avatar alone i
 | Asset | Source | Licence |
 |---|---|---|
 | **Megan the Fox** (default) | Polygonal Mind, 100 Avatars R3 | CC0-1.0 |
+| **響狐リク / Hibiki Fox Riku** (VTuber) | Original VRoid character, [Booth](https://booth.pm/en/items/1148939) | check source page |
 | **Two-Tails** (alternative) | Polygonal Mind, 100 Avatars R3 | CC0-1.0 |
 | VRoid sample girl (fallback) | pixiv VRoid Studio sample | CC0-1.0 |
+
+The three foxes sit on independent hosts and are tried in order, so a network
+that blocks one may still reach another. Where a licence could not be read from
+a machine-readable source, the app labels the entry **licence unverified** and
+links to the author's page rather than asserting terms on their behalf.
 | `idle.vrma` | pixiv ChatVRM | MIT |
 | 11 expression clips | `tk256ailab/vrm-viewer` | MIT |
 
@@ -154,6 +160,19 @@ Megan the Fox, or point the app at any `.vrm` file you already have.
 > fox download is the one path that could not be exercised here. The code around
 > it is ordinary: mirrors tried in order, glTF magic-byte validation, atomic
 > rename, and the in-app installer shares it.
+>
+> Searching VTuber sources specifically did pay off: the
+> [Lobe Vidol](https://github.com/lobehub/lobe-vidol-market) character market
+> turned up 響狐リク, an original VRoid fox girl, on a host independent of
+> Arweave. She is in the catalog as the second fox to try. Her CDN is blocked
+> here too, but she is unlikely to be blocked wherever Arweave is.
+
+### Using your own VTuber avatar
+
+Any VRM works. VRoid Hub and Booth are full of VTuber-style kitsune avatars —
+download one in a browser and load it with **Personality & Memory → Avatar →
+Use a .vrm file from my computer**. Every animation retargets onto whatever
+humanoid rig it finds, so nothing else needs changing.
 
 ### Animations
 
