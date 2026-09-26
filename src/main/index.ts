@@ -82,6 +82,9 @@ function applySecurityPolicy(): void {
             "script-src 'self'" + (process.env['ELECTRON_RENDERER_URL'] ? " 'unsafe-inline' 'unsafe-eval'" : ''),
             "object-src 'none'",
             "frame-src 'none'",
+            // form-action does not fall back to default-src, so without this a
+            // stray <form> in rendered Markdown could still post off-machine.
+            "form-action 'none'",
           ].join('; '),
         ],
       },
