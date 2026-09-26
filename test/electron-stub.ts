@@ -5,9 +5,19 @@ import { join } from 'node:path';
 /** A throwaway directory standing in for the app's user-data folder. */
 const sandbox = mkdtempSync(join(tmpdir(), 'kitsune-test-'));
 
+/**
+ * The install directory. It is the repository by default, so tests see the
+ * avatar that really ships; a test that needs a bare install points it
+ * somewhere empty instead.
+ */
+let appPath = process.cwd();
+export function setAppPath(path: string): void {
+  appPath = path;
+}
+
 export const app = {
   getPath: (): string => sandbox,
-  getAppPath: (): string => process.cwd(),
+  getAppPath: (): string => appPath,
   isPackaged: false,
 };
 

@@ -200,6 +200,12 @@ export interface CatalogEntry {
   /** Whether this avatar is a fox, which is what Rin is written to be. */
   fox: boolean;
   url: string;
+  /**
+   * Whether the file is already on disk — bundled with the app, or downloaded
+   * earlier. Selecting one of these needs no network, so the UI offers "Use"
+   * rather than "Install & use".
+   */
+  installed: boolean;
   /** Approximate download size in bytes, for progress display. */
   approxBytes?: number;
 }

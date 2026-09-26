@@ -699,8 +699,8 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
 
       {assets?.usingFallback && (
         <div className="callout">
-          The fox avatar is not installed — Rin is using the stand-in model. Install{' '}
-          <strong>Megan the Fox</strong> below to give her ears and a tail.
+          Rin is using the stand-in model. Pick one of the foxes below to give her ears and a
+          tail — the ones marked <em>ready</em> need no download.
         </div>
       )}
 
@@ -718,6 +718,11 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
                 <h3>{entry.name}</h3>
                 {entry.fox && <span className="pill">fox</span>}
                 {active && <span className="pill">in use</span>}
+                {!active && entry.installed && (
+                  <span className="pill" title="Already on this machine — no download needed">
+                    ready
+                  </span>
+                )}
                 {!entry.licenseVerified && (
                   <span className="pill caution" title="Licence not machine-readable — check the source page">
                     licence unverified
@@ -744,7 +749,7 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
                 <button
                   type="button"
                   className="ghost"
-                  disabled={downloading}
+                  disabled={downloading || active}
                   onClick={async () => {
                     setBusy(entry.id);
                     try {
@@ -763,8 +768,10 @@ function AvatarPanel({ settings, assets, onSettings, onAssetsChanged, onError }:
                       ? `Downloading ${percent}%`
                       : 'Downloading…'
                     : active
-                      ? 'Reinstall'
-                      : 'Install & use'}
+                      ? 'In use'
+                      : entry.installed
+                        ? 'Use this one'
+                        : 'Download & use'}
                 </button>
               </footer>
             </article>

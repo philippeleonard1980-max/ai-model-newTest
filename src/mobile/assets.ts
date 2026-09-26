@@ -148,6 +148,9 @@ export async function assetStatus(): Promise<AssetStatus> {
 
   let entry: CatalogModel | null = null;
   if (chosen) entry = cat.models.find((m) => m.file === chosen) ?? null;
+  // The stand-in is a fallback, not a choice: never let it outrank a real
+  // avatar that has since been installed.
+  if (entry && entry.id === cat.fallbackModelId) entry = null;
   if (!entry) {
     for (const id of order) {
       const candidate = cat.models.find((m) => m.id === id);
@@ -170,6 +173,10 @@ export async function assetStatus(): Promise<AssetStatus> {
 
 export async function catalogEntries(): Promise<CatalogEntry[]> {
   const cat = await catalog();
+  const installedFiles = new Set<string>();
+  for (const model of cat.models) {
+    if (await exists(`${MODELS_DIR}/${model.file}`)) installedFiles.add(model.file);
+  }
   return cat.models.map((model) => ({
     id: model.id,
     name: model.name,
@@ -180,6 +187,7 @@ export async function catalogEntries(): Promise<CatalogEntry[]> {
     sourceUrl: model.sourceUrl,
     fox: model.fox,
     url: model.mirrors[0] ?? '',
+    installed: installedFiles.has(model.file),
     approxBytes: model.approxBytes,
   }));
 }
@@ -191,6 +199,16 @@ export async function installModel(
   const cat = await catalog();
   const entry = cat.models.find((m) => m.id === id);
   if (!entry) throw new Error(`Unknown model "${id}".`);
+
+  // Already downloaded: just select it, so choosing an avatar works offline
+  // and nothing is fetched twice.
+  if (await exists(`${MODELS_DIR}/${entry.file}`)) {
+    const settings = await loadSettings();
+    settings.avatar.modelPath = entry.file;
+    await saveSettings(settings);
+    onProgress({ id, receivedBytes: 0, totalBytes: null, done: true });
+    return assetStatus();
+  }
 
   const failures: string[] = [];
   for (const url of entry.mirrors) {

@@ -1,7 +1,14 @@
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { assetStatus, catalogEntries, useLocalModel } from '../src/main/assets/manager';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { setAppPath } from './electron-stub';
+import {
+  assetStatus,
+  catalogEntries,
+  installModel,
+  useLocalModel,
+} from '../src/main/assets/manager';
 import { loadSettings, saveSettings } from '../src/main/store/settings';
 import { userAssetsDir } from '../src/main/store/paths';
 
@@ -21,8 +28,17 @@ function clearChosenModel(): void {
   saveSettings(settings);
 }
 
+/** Pretend the app was installed without its bundled avatars. */
+function withoutBundledAvatars(): void {
+  setAppPath(mkdtempSync(join(tmpdir(), 'kitsune-bare-')));
+}
+
 beforeEach(() => {
   clearChosenModel();
+});
+
+afterEach(() => {
+  setAppPath(process.cwd());
 });
 
 describe('assetStatus — usingFallback', () => {
@@ -39,13 +55,29 @@ describe('assetStatus — usingFallback', () => {
   });
 
   it('flags the catalog fallback, which really is a stand-in', () => {
+    withoutBundledAvatars();
     const fallback = catalogEntries().find((entry) => !entry.fox);
     expect(fallback).toBeDefined();
-    const path = join(userAssetsDir(), 'models', 'vroid-sample-girl.vrm');
+    const models = join(userAssetsDir(), 'models');
+    if (existsSync(models)) rmSync(models, { recursive: true, force: true });
+    const path = join(models, 'vroid-sample-girl.vrm');
     writeStubVrm(path);
     useLocalModel(path);
 
     expect(assetStatus().usingFallback).toBe(true);
+  });
+
+  it('lets the bundled fox win over a pinned stand-in', () => {
+    // The stand-in is what the app falls back to, never something anyone picks.
+    // Leaving it pinned is how an install that later gains a real avatar ends
+    // up showing the stand-in for ever.
+    const standIn = join(userAssetsDir(), 'models', 'vroid-sample-girl.vrm');
+    writeStubVrm(standIn);
+    useLocalModel(standIn);
+
+    const status = assetStatus();
+    expect(status.modelPath).not.toBe(standIn);
+    expect(status.usingFallback).toBe(false);
   });
 
   it('does not flag a catalog fox', () => {
@@ -86,7 +118,35 @@ describe('catalogEntries', () => {
     for (const entry of catalogEntries()) {
       expect(typeof entry.fox).toBe('boolean');
       expect(typeof entry.licenseVerified).toBe('boolean');
+      expect(typeof entry.installed).toBe('boolean');
       expect(entry.sourceUrl).toMatch(/^https:\/\//);
+    }
+  });
+
+  it('marks the bundled avatar as already installed', () => {
+    const bundled = catalogEntries().find((entry) => entry.installed);
+    expect(bundled, 'the default avatar ships with the app').toBeDefined();
+  });
+});
+
+describe('installModel', () => {
+  it('selects an avatar that is already on disk without downloading it', async () => {
+    // The bundled fox has a mirror URL, but choosing her must work with no
+    // network at all — otherwise an offline user cannot pick her back.
+    const bundled = catalogEntries().find((entry) => entry.installed);
+    expect(bundled).toBeDefined();
+
+    const fetchSpy = (): never => {
+      throw new Error('installModel must not reach the network for a local file');
+    };
+    const original = globalThis.fetch;
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    try {
+      const path = await installModel(bundled!.id, () => undefined);
+      expect(existsSync(path)).toBe(true);
+      expect(assetStatus().modelName).toBe(bundled!.name);
+    } finally {
+      globalThis.fetch = original;
     }
   });
 });

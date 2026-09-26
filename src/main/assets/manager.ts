@@ -72,7 +72,10 @@ export function resolveModelPath(): { path: string | null; entry: CatalogModel |
   const chosen = loadSettings().avatar.modelPath;
   if (chosen && existsSync(chosen)) {
     const entry = catalog().models.find((model) => basename(chosen) === model.file) ?? null;
-    return { path: chosen, entry };
+    // The stand-in is what the app falls back to, never something anyone picks
+    // on purpose. Leaving it pinned would mean an install that later gains a
+    // real avatar keeps showing the stand-in for ever, so it does not win.
+    if (!entry || entry.id !== catalog().fallbackModelId) return { path: chosen, entry };
   }
 
   const preferenceOrder = [
@@ -127,6 +130,7 @@ export function catalogEntries(): CatalogEntry[] {
     sourceUrl: model.sourceUrl,
     fox: model.fox,
     url: model.mirrors[0] ?? '',
+    installed: Boolean(findFile('models', model.file)),
     approxBytes: model.approxBytes,
   }));
 }
@@ -142,9 +146,12 @@ function looksLikeGltf(buffer: Buffer): boolean {
 }
 
 /**
- * Downloads a catalog model into the user assets directory, reporting progress.
- * Writes to a temporary file and renames on success so a failed download can
- * never leave a truncated .vrm behind.
+ * Selects a catalog model, downloading it only if it is not already on disk,
+ * and reporting progress while it does. Writes to a temporary file and renames
+ * on success so a failed download can never leave a truncated .vrm behind.
+ *
+ * The local-first check is what lets the bundled avatar be chosen offline, and
+ * what stops a model the user already has being fetched a second time.
  */
 export async function installModel(
   id: string,
@@ -152,6 +159,15 @@ export async function installModel(
 ): Promise<string> {
   const entry = catalog().models.find((model) => model.id === id);
   if (!entry) throw new Error(`Unknown model "${id}".`);
+
+  const present = findFile('models', entry.file);
+  if (present) {
+    const settings = loadSettings();
+    settings.avatar.modelPath = present;
+    saveSettings(settings);
+    onProgress({ id, receivedBytes: 0, totalBytes: null, done: true });
+    return present;
+  }
 
   const targetDir = ensureDir(join(userAssetsDir(), 'models'));
   const target = join(targetDir, entry.file);
