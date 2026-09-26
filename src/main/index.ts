@@ -9,7 +9,22 @@ import { loadSettings } from './store/settings.js';
 
 // Registered before `app.ready` so the renderer may fetch() these URLs.
 protocol.registerSchemesAsPrivileged([
-  { scheme: ASSET_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, bypassCSP: false } },
+  {
+    scheme: ASSET_SCHEME,
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      bypassCSP: false,
+      // The renderer is a file:// (or dev-server) origin, so every asset
+      // request is cross-origin. Without this the fetch is rejected before the
+      // handler is ever consulted and the avatar silently fails to load with
+      // nothing more than "Failed to fetch". Setting an
+      // Access-Control-Allow-Origin header on the response does not help;
+      // the scheme itself has to be declared CORS-enabled.
+      corsEnabled: true,
+    },
+  },
 ]);
 
 let mainWindow: BrowserWindow | null = null;
