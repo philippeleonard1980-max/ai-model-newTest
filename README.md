@@ -96,8 +96,13 @@ Flash-only. If either matters to you, use the local backend.
 
 ### Running fully offline and free
 
-Pick **Local model (Ollama)** in *Google & Gemini* and Rin answers from a model
-on your own machine. No account, no network, no quota, nothing to bill.
+Pick **Local model (Ollama)** under *Model → Backend*, or press **Use a local
+model instead** in the sign-in panel, and Rin answers from a model on your own
+machine. No account, no network, no quota, nothing to bill.
+
+Once it is selected the panel says whether Ollama is actually answering and
+which models you have pulled, so a missing install or an empty model list shows
+up there rather than as a failed message.
 
 ```sh
 # install Ollama from https://ollama.com, then:

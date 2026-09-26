@@ -297,6 +297,15 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
   const [clientSecret, setClientSecret] = useState('');
   const [models, setModels] = useState<ModelOption[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  /**
+   * Whether Ollama is actually answering, and what it has pulled. Selecting the
+   * local backend is one click, but it only helps if Ollama is installed and
+   * running — so say which of those is missing rather than letting the first
+   * message fail.
+   */
+  const [ollama, setOllama] = useState<
+    { state: 'checking' } | { state: 'up'; models: ModelOption[] } | { state: 'down'; reason: string } | null
+  >(null);
 
   useEffect(() => {
     void (async () => {
@@ -331,6 +340,24 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
       onError((error as Error).message);
     }
   };
+
+  const checkOllama = useCallback(async (): Promise<void> => {
+    setOllama({ state: 'checking' });
+    try {
+      const pulled = await window.kitsune.chat.models();
+      setOllama({ state: 'up', models: pulled });
+    } catch (error) {
+      setOllama({ state: 'down', reason: (error as Error).message });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (settings.gemini.backend !== 'ollama') {
+      setOllama(null);
+      return;
+    }
+    void checkOllama();
+  }, [settings.gemini.backend, settings.gemini.ollamaHost, checkOllama]);
 
   const setUp = async (): Promise<void> => {
     setRunning(true);
@@ -438,6 +465,18 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
                 Show me how
               </button>
               .
+            </p>
+            <p>
+              <strong>Or leave Google out of it.</strong> Rin can answer from a model running on
+              this machine — no account, no quota, nothing to sign.{' '}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => void patch({ backend: 'ollama' })}
+              >
+                Use a local model instead
+              </button>
+              . Everything except hold-to-talk works the same; a local text model has no ears.
             </p>
           </div>
         )}
@@ -655,6 +694,37 @@ function ConnectionPanel({ settings, auth, onSettings, onAuthChanged, onError }:
               placeholder="http://127.0.0.1:11434"
               onChange={(event) => void patch({ ollamaHost: event.target.value })}
             />
+            {ollama?.state === 'checking' && <p className="muted small">Looking for Ollama…</p>}
+            {ollama?.state === 'up' && ollama.models.length > 0 && (
+              <p className="muted small">
+                Ollama is running with {ollama.models.length} model
+                {ollama.models.length === 1 ? '' : 's'}: {ollama.models.map((m) => m.id).join(', ')}.
+                Put one of those in the Model box above.
+              </p>
+            )}
+            {ollama?.state === 'up' && ollama.models.length === 0 && (
+              <p className="muted small">
+                Ollama is running but has no models yet. Pull one in a terminal —{' '}
+                <code>ollama pull llama3.2</code> — then press <em>Refresh list</em>.
+              </p>
+            )}
+            {ollama?.state === 'down' && (
+              <p className="muted small">
+                Not reachable: {ollama.reason} Install it from{' '}
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => void window.kitsune.shell.openExternal('https://ollama.com')}
+                >
+                  ollama.com
+                </button>
+                , run <code>ollama pull llama3.2</code>, then{' '}
+                <button type="button" className="linkish" onClick={() => void checkOllama()}>
+                  check again
+                </button>
+                .
+              </p>
+            )}
           </div>
         ) : (
           <div className="field">
